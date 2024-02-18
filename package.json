@@ -1,0 +1,33 @@
+{
+	"name": "plubstrates",
+	"private": true,
+	"version": "0.0.0",
+	"scripts": {
+		"dev": "vite dev --port 3333",
+		"build": "vite build",
+		"watch": "vite build --watch",
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"jspm": "^3.0.1",
+		"prettier": "^2.8.8",
+		"serve": "^14.2.0",
+		"vite": "^4.4.9",
+		"vitest": "^1.1.1"
+	},
+	"dependencies": {
+		"@automerge/automerge": "^2.1.10",
+		"@automerge/automerge-repo": "^1.0.19",
+		"@automerge/automerge-repo-network-broadcastchannel": "^1.1.0-alpha.5",
+		"@automerge/automerge-repo-network-messagechannel": "^1.1.0-alpha.5",
+		"@automerge/automerge-repo-network-websocket": "^1.1.0-alpha.5",
+		"@automerge/automerge-repo-storage-indexeddb": "^1.1.0-alpha.5",
+		"diff-match-patch": "^1.0.5",
+		"es-module-shims": "^1.8.0",
+		"setimmediate": "^1.0.5",
+		"verbal-expressions": "^1.0.2"
+	},
+	"resolutions": {
+		"@automerge/automerge-wasm": "file:./automerge-wasm"
+	}
+}
