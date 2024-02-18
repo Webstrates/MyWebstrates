@@ -214,7 +214,6 @@ coreUtilsModule.appendChildWithoutScriptExecution = (parentElement, childElement
  * @public
  */
 coreUtilsModule.executeScripts = (scripts, callback) => {
-	console.log("execute scripts", scripts);
 	const script = scripts.shift();
 	if (!script) {
 		return callback();

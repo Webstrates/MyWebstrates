@@ -1,7 +1,7 @@
 'use strict';
-import {coreConfig} from '../coreConfig.js';
-import {corePopulator} from '../corePopulator.js';
-import {coreUtils} from '../coreUtils.js';
+import {coreConfig} from './coreConfig.js';
+import {corePopulator} from './corePopulator.js';
+import {coreUtils} from './coreUtils.js';
 
 const globalObjectModule = {};
 

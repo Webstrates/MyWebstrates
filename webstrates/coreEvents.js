@@ -123,4 +123,9 @@ coreEventsModule.triggerEvent = (eventName, ...args) => {
 	});
 };
 
+coreEventsModule.createEvent('allModulesLoaded');
+coreEventsModule.createEvent('receivedDocument');
+coreEventsModule.createEvent('message');
+coreEventsModule.createEvent('reconnect');
+
 export const coreEvents = coreEventsModule;

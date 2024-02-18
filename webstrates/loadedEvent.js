@@ -1,5 +1,5 @@
 'use strict';
-import {coreEvents} from '../coreEvents.js';
+import {coreEvents} from './coreEvents.js';
 import {globalObject} from './globalObject.js';
 
 const loadedEventModule = {};
@@ -72,4 +72,4 @@ coreEvents.addEventListener('allModulesLoaded', () => {
 	});
 });
 
-module.exports = loadedEventModule;
+export const loadedEvent = loadedEventModule;
