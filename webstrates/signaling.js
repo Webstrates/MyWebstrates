@@ -9,7 +9,7 @@ const signalingModule = {};
 
 coreEvents.createEvent('receivedSignal');
 
-const webstrateId = coreUtils.getLocationObject().webstrateId;
+//const webstrateId = coreUtils.getLocationObject().webstrateId;
 
 // Allow other modules to add interceptors to signals. An interceptor is function that gets access
 // to a signal payload, then decides whether this module should handle the signal as a regular
