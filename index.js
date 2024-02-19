@@ -22,6 +22,7 @@ import {protectedMode} from "./webstrates/protectedMode";
 import {domEvents} from "./webstrates/domEvents";
 import {transclusionEvent} from "./webstrates/transclusionEvent";
 import {signaling} from "./webstrates/signaling";
+import {clientManager} from "./webstrates/clientManager";
 
 const documentProxyObj = {};
 const documentProxy = new Proxy(document, documentProxyObj);
@@ -77,14 +78,16 @@ async function installServiceWorker() {
 
 async function initializeRepo() {
 	console.log("Creating repo")
+	let peerId = "fedistrates-client-" + Math.round(Math.random() * 1000000);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
 		network: [
 			new BrowserWebSocketClientAdapter(`wss://${HOME_SYNC_SERVER}`),
 		],
-		peerId: "fedistrates-client-" + Math.round(Math.random() * 1000000),
+		peerId: peerId,
 		sharePolicy: async (peerId) => peerId.includes("storage-server"),
-	})
+	});
+	coreEvents.triggerEvent('peerIdReceived', {id: peerId});
 
 	//await AutomergeWasm.promise
 	//Automerge.use(AutomergeWasm)

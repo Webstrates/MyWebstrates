@@ -9,7 +9,11 @@ const signalingModule = {};
 
 coreEvents.createEvent('receivedSignal');
 
-//const webstrateId = coreUtils.getLocationObject().webstrateId;
+let locationObject = coreUtils.getLocationObject();
+let webstrateId;
+if (locationObject) {
+	webstrateId = locationObject.webstrateId;
+};
 
 // Allow other modules to add interceptors to signals. An interceptor is function that gets access
 // to a signal payload, then decides whether this module should handle the signal as a regular
@@ -33,7 +37,7 @@ coreEvents.addEventListener('message', function(msg, sender) {
 	let payload = msg.body;
 	// Ignore message intended for other webstrates sharing the same websocket.
 	if (payload.d !== webstrateId) return;
-
+	if (payload.recipients && !payload.recipients.includes(globalObject.publicObject.clientId)) return;
 	let intercepted = false;
 	interceptors.forEach(interceptor => {
 		intercepted |= interceptor(payload);

@@ -127,5 +127,9 @@ coreEventsModule.createEvent('allModulesLoaded');
 coreEventsModule.createEvent('receivedDocument');
 coreEventsModule.createEvent('message');
 coreEventsModule.createEvent('reconnect');
+coreEventsModule.createEvent('peerIdReceived');
+coreEventsModule.createEvent('peerListReceived');
+coreEventsModule.createEvent('peerConnected');
+coreEventsModule.createEvent('peerDisconnected');
 
 export const coreEvents = coreEventsModule;
