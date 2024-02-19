@@ -119,11 +119,10 @@ setupMessageChannel(repo);
 let match = window.location.pathname.match('/d/(.+)/');
 if (match) {
 	let documentId = match[1];
-	const handle = (await repo).find(documentId);
+	const handle = (await repo).find(`automerge:${documentId}`);
 
 	window.handle = handle;
 	if (handle) {
-
 		setupWebstrates(handle);
 	} else {
 		document.body.innerHTML = "NO SUCH DOCUMENT MAN OR MADAM OR ..."
