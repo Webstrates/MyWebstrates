@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v131"
+const CACHE_NAME = "v162"
 const FILES_TO_CACHE = [
 	"/automerge_wasm_bg.wasm",
 	"/es-module-shims.js",
@@ -57,7 +57,6 @@ self.addEventListener("install", (event) => {
 })
 
 self.addEventListener("message", async (event) => {
-	console.log("Client messaged", event.data)
 	if (event.data && event.data.type === "INIT_PORT") {
 		const clientPort = event.ports[0]
 		;(await repo).networkSubsystem.addNetworkAdapter(
@@ -111,7 +110,7 @@ async function handleFetch(event) {
 			d.assets = [];
 			d.meta = {};
 			d.data = {};
-			d.dom = generateDOM("New plubstrate")
+			d.dom = generateDOM("New webstrate")
 		});
 		let id = handle.documentId;
 		return new Response(`<!DOCTYPE html>
@@ -131,27 +130,32 @@ async function handleFetch(event) {
 		});
 	}
 
-	let imageMatch = event.request.url.match("/d/(.+)/((.+)\.(.+))");
-	if (imageMatch) {
-		let docId = imageMatch[1];
-		let filename = imageMatch[2];
-		let handle = (await repo).find(docId);
+	let assetMatch = event.request.url.match("/d/(.+)/((.+)\.(.+))");
+	if (assetMatch) {
+		let docId = assetMatch[1];
+		let filename = assetMatch[2];
+		let handle = (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
-		let fileId;
-		for (let image of doc.images) {
-			if (image.name === filename) {
-				fileId = image.id;
+		let assetId;
+		for (let asset of doc.assets) {
+			if (asset.fileName === filename) {
+				assetId = asset.id;
 			}
 		}
-		if (fileId) {
-			let fileHandle = (await repo).find(fileId);
-			let fileDoc = await fileHandle.doc();
-			const uint8Array = fileDoc.imageData;
-			const blob = new Blob([uint8Array], { type: fileDoc.mimetype });
+		if (assetId) {
+			let assetHandle = (await repo).find(`automerge:${assetId}`);
+			let assetDoc = await assetHandle.doc();
+			const uint8Array = assetDoc.data;
+			const blob = new Blob([uint8Array], { type: assetDoc.mimetype });
 			return new Response(blob,{
 				status: 200,
 				statusText: 'OK'
 			})
+		} else {
+			return new Response("No such asset", {
+				status: 404,
+				statusText: 'No such asset'
+			});
 		}
 	}
 

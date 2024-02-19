@@ -3,11 +3,6 @@ import {coreEvents} from './coreEvents.js';
 import {coreOpCreator} from './coreOpCreator.js';
 import {corePathTree} from './corePathTree.js';
 import { coreUtils } from "./coreUtils";
-//const coreEvents = require("./coreEvents");
-//const coreOpCreator = require("./coreOpCreator");
-//const coreChannel = require('./coreChannel');
-//const clientManager = require('./clientManager');
-//const corePathTree = require("./corePathTree");
 
 const coreDocumentModule = {};
 
@@ -39,6 +34,7 @@ coreDocumentModule.handlePatches = function(patches) {
  */
 function processPatches(patches) {
 	patches = coreUtils.consolidateAutomergePatches(patches);
+	let assetPatch;
 	for (let patch of patches) {
 		let path = patch.path;
 		let first = path.shift();
@@ -49,7 +45,18 @@ function processPatches(patches) {
 			case 'meta':
 				break;
 			case 'assets':
-				handleUpdateToAssets(patch);
+				if (patch.action === 'del') {
+					handleUpdateToAssets(patch);
+					return;
+				} else if (patch.action === 'insert') { //We have to consolidate the subsequent puts into one patch
+					assetPatch = structuredClone(patch);
+				} else if (assetPatch && patch.action == 'put' && assetPatch.path[0] === patch.path[0]) {
+					assetPatch.values[0][patch.path[1]] = patch.value;
+				}
+				if (assetPatch && assetPatch.values[0].fileName && assetPatch.values[0].fileSize && assetPatch.values[0].mimeType, assetPatch.values[0].id) {
+					handleUpdateToAssets(assetPatch);
+					assetPatch = undefined;
+				}
 				break;
 			case 'data':
 				coreEvents.triggerEvent('dataUpdated', patch);
@@ -64,8 +71,8 @@ function processPatches(patches) {
  */
 function handleUpdateToAssets(patch) {
 	if (patch.path.length !== 1) return; // We don't care about attributes being changed. They shouldn't!
-	if (patch.action === 'put') { // Adding an asset
-		coreEvents.triggerEvent('assetAdded', patch.path[0]);
+	if (patch.action === 'insert') { // Adding an asset
+		coreEvents.triggerEvent('assetAdded', patch.values[0]);
 	} else if (patch.action === 'del') { // Removing an asset
 		coreEvents.triggerEvent('assetDeleted', patch.path[0]);
 	}

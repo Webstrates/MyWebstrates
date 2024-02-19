@@ -14,6 +14,7 @@ import {coreMutation} from './webstrates/coreMutation.js';
 import {coreOpCreator} from './webstrates/coreOpCreator.js';
 import {coreDocument} from './webstrates/coreDocument.js';
 import {coreOpApplier} from './webstrates/coreOpApplier.js';
+import {coreAssets} from './webstrates/coreAssets.js';
 import * as setimmediate from "setimmediate";
 
 import {globalObject} from "./webstrates/globalObject.js";
@@ -23,6 +24,7 @@ import {domEvents} from "./webstrates/domEvents";
 import {transclusionEvent} from "./webstrates/transclusionEvent";
 import {signaling} from "./webstrates/signaling";
 import {clientManager} from "./webstrates/clientManager";
+import {userObject} from "./webstrates/userObject";
 
 const documentProxyObj = {};
 const documentProxy = new Proxy(document, documentProxyObj);
