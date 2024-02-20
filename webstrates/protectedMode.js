@@ -20,7 +20,7 @@ import { globalObject } from './globalObject.js';
 
 const protectedModeModule = {};
 
-coreEvents.addEventListener('populated', (doc, options) => {
+coreEvents.addEventListener('receivedDocument', (doc, options) => {
 	const dataProtectedAttribute = doc.dom && doc.dom[1] && doc.dom[1]['data-protected'];
 	const elementsProtected = ['all', 'elements', ''].includes(dataProtectedAttribute);
 	const attributesProtected = ['all', 'attributes', ''].includes(dataProtectedAttribute);

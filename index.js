@@ -121,9 +121,9 @@ function setupWebstrates(handle) {
 		coreDOM.setDocuments(document, _document, documentProxyObj);
 		handle.doc().then((doc) => {
 			window.amDoc = doc;
-			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 			coreOpApplier.listenForOps();
 			corePopulator.populate(coreDOM.externalDocument, doc).then(async => {
+				coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 				coreMutation.emitMutationsFrom(coreDOM.externalDocument);
 				coreOpCreator.emitOpsFromMutations();
 				coreDocument.subscribeToOps();
