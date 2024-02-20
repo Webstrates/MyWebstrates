@@ -30,28 +30,10 @@ import {data} from "./webstrates/data";
 const documentProxyObj = {};
 const documentProxy = new Proxy(document, documentProxyObj);
 
-//coreEvents.createEvent('allModulesLoaded');
-//coreEvents.createEvent('receivedDocument');
-//coreEvents.createEvent('message');
-
-
-
-window.config = {
-	modules: [
-		//'assets',
-		'tagging',
-		'clientManager',
-		'userObject',
-		'data'
-	]
-};
+window.config = {};
 window.config.isTransientElement = (DOMNode) => DOMNode.matches('transient')
 window.config.isTransientAttribute = (DOMNode, attributeName) => attributeName.startsWith('transient-')
 
-/*for (let module of window.config.modules) {
-	import(`./webstrates/${module}.js`);
-}
-*/
 coreEvents.triggerEvent('allModulesLoaded');
 
 
@@ -139,9 +121,9 @@ function setupWebstrates(handle) {
 		coreDOM.setDocuments(document, _document, documentProxyObj);
 		handle.doc().then((doc) => {
 			window.amDoc = doc;
+			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 			coreOpApplier.listenForOps();
 			corePopulator.populate(coreDOM.externalDocument, doc).then(async => {
-				coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 				coreMutation.emitMutationsFrom(coreDOM.externalDocument);
 				coreOpCreator.emitOpsFromMutations();
 				coreDocument.subscribeToOps();

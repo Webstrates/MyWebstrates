@@ -20,12 +20,12 @@ import { globalObject } from './globalObject.js';
 
 const protectedModeModule = {};
 
-coreEvents.addEventListener('receivedDocument', (doc, options) => {
+coreEvents.addEventListener('populated', (doc, options) => {
 	const dataProtectedAttribute = doc.dom && doc.dom[1] && doc.dom[1]['data-protected'];
 	const elementsProtected = ['all', 'elements', ''].includes(dataProtectedAttribute);
 	const attributesProtected = ['all', 'attributes', ''].includes(dataProtectedAttribute);
 	// Changes to static documents aren't persisted, so no reason to enforce any protection.
-	if (options.static) return;
+	if (options && options.static) return;
 
 	// Either elements, attributes, or both are protected in this webstrate.
 	const isProtected = elementsProtected || attributesProtected;
