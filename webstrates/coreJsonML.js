@@ -14,6 +14,11 @@ import {coreDOM} from './coreDOM.js'
 
 const coreJsonMLModule = {};
 
+let document;
+coreJsonMLModule.setDocument = (_document) => {
+	document = _document;
+}
+
 function isPlainObject(obj) {
 	return obj && typeof obj === 'object'
 		// Previously, we did comparison like: Object.getPrototypeOf(obj) === Object.prototype, but we

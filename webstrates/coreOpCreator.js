@@ -17,6 +17,12 @@ const coreOpCreatorModule = {};
 
 coreEvents.createEvent('createdOps');
 
+let document;
+
+coreOpCreatorModule.setDocument = (_document) => {
+	document = _document;
+}
+
 // The 'idempotent' option allows these events to be created even if they already
 // exists. We do this, because these events also are used (and created) in coreOpApplier.
 coreEvents.createEvent('DOMAttributeSet', { idempotent: true });
@@ -187,7 +193,7 @@ function childListMutation(mutation, targetPathNode) {
 		// Sanitizes all nodes (i.e. ensures valid tag names and attributes) and set wids on all nodes.
 		const parentNode = mutation.target;
 
-		let addedPathNode = corePathTree.getPathNode(addedNode, parentNode);
+		let addedPathNode = corePathTree.PathTree.getPathNode(addedNode, parentNode);
 
 		// If an element already has a pathNode, it means it's already in the DOM. This could still
 		// generate an op if the element is being moved. However, if the element is already in the DOM,
@@ -257,7 +263,7 @@ function childListMutation(mutation, targetPathNode) {
 
 		// If we can't create path node, it can't been registered in the JsonML at all, so creating
 		// an op for it doesn't make sense. This happens for instance with transient elements.
-		const newPathNode = corePathTree.create(addedNode, targetPathNode);
+		const newPathNode = corePathTree.PathTree.create(addedNode, targetPathNode);
 		if (!newPathNode) {
 			coreEvents.triggerEvent('DOMNodeInserted', addedNode, mutation.target, true);
 			return;
@@ -275,10 +281,10 @@ function childListMutation(mutation, targetPathNode) {
 		// mutation.previousSibling will refer to A for both mutations, but mutation.previousSibling
 		// will refer to A and B, respectively.
 		let previousSibling = addedNode.previousSibling;
-		let previousSiblingPathNode = corePathTree.getPathNode(previousSibling, parentNode);
+		let previousSiblingPathNode = corePathTree.PathTree.getPathNode(previousSibling, parentNode);
 		while (previousSibling && !previousSiblingPathNode) {
 			previousSibling = previousSibling.previousSibling;
-			previousSiblingPathNode = corePathTree.getPathNode(previousSibling, parentNode);
+			previousSiblingPathNode = corePathTree.PathTree.getPathNode(previousSibling, parentNode);
 		}
 
 		if (previousSibling) {
@@ -289,7 +295,7 @@ function childListMutation(mutation, targetPathNode) {
 		} else {
 			targetPathNode.children.push(newPathNode);
 		}
-		const path = corePathTree.getPathNode(addedNode, parentNode).toPath();
+		const path = corePathTree.PathTree.getPathNode(addedNode, parentNode).toPath();
 		const op = { li: coreJsonML.fromHTML(addedNode), p: path };
 		ops.push(op);
 
@@ -297,7 +303,7 @@ function childListMutation(mutation, targetPathNode) {
 	});
 
 	Array.from(mutation.removedNodes).forEach(function(removedNode) {
-		var removedPathNode = corePathTree.getPathNode(removedNode, mutation.target);
+		var removedPathNode = corePathTree.PathTree.getPathNode(removedNode, mutation.target);
 
 		// If an element has no path node, it hasn't been registered in the JsonML at all, so it won't
 		// exist on other clients, and therefore creating an op to delete it wouldn't make sense.
@@ -326,12 +332,12 @@ function childListMutation(mutation, targetPathNode) {
 
 coreOpCreatorModule.emitOpsFromMutations = () => {
 	coreEvents.addEventListener('mutation', (mutation) => {
-		const targetPathNode = corePathTree.getPathNode(mutation.target);
+		const targetPathNode = corePathTree.PathTree.getPathNode(mutation.target);
 
 		const elementTarget = mutation.target.nodeType === document.ELEMENT_NODE
 			? mutation.target
 			: mutation.target.parentElement;
-		const elementPathNode = corePathTree.getPathNode(elementTarget);
+		const elementPathNode = corePathTree.PathTree.getPathNode(elementTarget);
 
 		let ops;
 		switch (mutation.type) {
@@ -416,7 +422,7 @@ coreOpCreatorModule.suppressAddingWids = false;
 coreOpCreatorModule.addWidToElement = node => {
 	if (coreOpCreatorModule.suppressAddingWids) return;
 	if (node.nodeType === document.ELEMENT_NODE && !node.__wid) {
-		const pathNode = corePathTree.getPathNode(node);
+		const pathNode = corePathTree.PathTree.getPathNode(node);
 
 		// Anything without a pathNode is transient and therefore doesn't need a wid.
 		if (!pathNode) {

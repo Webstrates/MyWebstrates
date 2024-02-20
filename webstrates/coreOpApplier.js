@@ -23,6 +23,11 @@ import {coreDOM} from './coreDOM.js';
 
 const coreOpApplierModule = {};
 
+let document;
+coreOpApplierModule.setDocument = (_document) => {
+	document = _document;
+}
+
 // The 'idempotent' option allows these events to be created even if they already
 // exists. We do this, because these events also are used (and created) in coreOpCreator.
 coreEvents.createEvent('DOMAttributeSet', { idempotent: true });
@@ -72,7 +77,7 @@ function getNamespace(element) {
  * @private
  */
 function setAttribute(rootElement, path, cleanAttributeName, newValue) {
-	const [childElement] = corePathTree.elementAtPath(rootElement, path);
+	const [childElement] = corePathTree.PathTree.elementAtPath(rootElement, path);
 	// This has been commented out as it makes non-transient attributes appear transient in protected
 	// mode, and we don't really seem to need it. If an op comes in, it can't really be transient
 	// after all.
@@ -109,7 +114,7 @@ function setAttribute(rootElement, path, cleanAttributeName, newValue) {
  * @private
  */
 function removeAttribute(rootElement, path, attributeName) {
-	const [childElement ] = corePathTree.elementAtPath(rootElement, path);
+	const [childElement ] = corePathTree.PathTree.elementAtPath(rootElement, path);
 
 	if (config.isTransientAttribute(childElement, attributeName)) {
 		return;
@@ -132,8 +137,9 @@ function removeAttribute(rootElement, path, attributeName) {
  * @private
  */
 function insertNode(rootElement, path, value) {
+	console.log("INSERT NODE, MY DOCUMENT IS", rootElement, value, document);
 	const [childElement, childIndex, parentElement] =
-		corePathTree.elementAtPath(rootElement, path);
+		corePathTree.PathTree.elementAtPath(rootElement, path);
 
 	const namespace = getNamespace(parentElement);
 	let newElement;
@@ -144,8 +150,8 @@ function insertNode(rootElement, path, value) {
 	// chidElement is defined, however, we insert the element before childElement.
 	coreUtils.appendChildWithoutScriptExecution(parentElement, newElement, childElement);
 
-	const parentPathNode = corePathTree.getPathNode(parentElement);
-	const childPathNode = corePathTree.create(newElement, parentPathNode);
+	const parentPathNode = corePathTree.PathTree.getPathNode(parentElement);
+	const childPathNode = corePathTree.PathTree.create(newElement, parentPathNode);
 
 	// childPathNode may not have been created, because its parent doesn't have a PathTree (because
 	// its a descendant of a transient element, or a transient element itself) or because the new
@@ -166,7 +172,7 @@ function insertNode(rootElement, path, value) {
  */
 function deleteNode(rootElement, path) {
 	const [childElement, childIndex, parentElement] =
-		corePathTree.elementAtPath(rootElement, path);
+		corePathTree.PathTree.elementAtPath(rootElement, path);
 	// This part is a bit of a hack, because contenteditable is a weird beast to play with.
 	// Consider a contenteditable field with the text HELLO in it. Say user A puts a cursor before
 	// the letter O: HELL|O. User B then makes a linebreak after the H. Now, ELLO gets removed,
@@ -206,7 +212,7 @@ function deleteNode(rootElement, path) {
 
 	// Update PathTree to reflect the deletion.
 	// TODO: Use PathTree.remove() instead.
-	const parentPathNode = corePathTree.getPathNode(parentElement);
+	const parentPathNode = corePathTree.PathTree.getPathNode(parentElement);
 	//const childPathNode = corePathTree.getPathNode(childElement, parentPathNode);
 	parentPathNode.children.splice(childIndex, 1);
 
@@ -228,7 +234,7 @@ function deleteNode(rootElement, path) {
  */
 function replaceNode(rootElement, path, value) {
 	const [childElement, childIndex, parentElement, indexType] =
-		corePathTree.elementAtPath(rootElement, path);
+		corePathTree.PathTree.elementAtPath(rootElement, path);
 
 	// Webstrates file system has some broken parsing, so it may think JavaScript like "< b)" in
 	// "if (a < b)" is an element and try to send a replacement op. In this case, childElement
@@ -244,7 +250,7 @@ function replaceNode(rootElement, path, value) {
 			const namespace = getNamespace(oldElement);
 			const newElement = coreJsonML.toHTML([value], namespace);
 
-			const parentPathNode = corePathTree.getPathNode(parentElement);
+			const parentPathNode = corePathTree.PathTree.getPathNode(parentElement);
 			if (!parentPathNode) {
 				console.warn('No parentPathNode found, aborting. This shouldn\'t happen, but...');
 				return;
@@ -267,7 +273,7 @@ function replaceNode(rootElement, path, value) {
 			coreUtils.appendChildWithoutScriptExecution(parentElement, newElement, oldElement);
 			oldElement.remove();
 
-			const newElementPathNode = corePathTree.create(newElement, parentPathNode, true);
+			const newElementPathNode = corePathTree.PathTree.create(newElement, parentPathNode, true);
 
 			// New element may not have a PathNode if it's a transient object.
 			if (!newElementPathNode) {
@@ -416,7 +422,7 @@ function setSelectionRange(textNode, fakeRange) {
  */
 function insertInText(rootElement, path, charIndex, value) {
 	let [childElement, /*childIndex*/, parentElement, indexType] =
-		corePathTree.elementAtPath(rootElement, path);
+		corePathTree.PathTree.elementAtPath(rootElement, path);
 	let attributeName = typeof path[path.length-1] === 'string' ? path[path.length-1] : undefined;
 	switch (indexType) {
 		case jsonml.TAG_NAME_INDEX:
@@ -492,7 +498,7 @@ function insertInText(rootElement, path, charIndex, value) {
  */
 function deleteInText(rootElement, path, charIndex, value) {
 	let [childElement, /*childIndex*/, parentElement, indexType] =
-		corePathTree.elementAtPath(rootElement, path);
+		corePathTree.PathTree.elementAtPath(rootElement, path);
 	let attributeName = typeof path[path.length-1] === 'string' ? path[path.length-1] : undefined;
 
 	switch (indexType) {
@@ -572,7 +578,7 @@ function applyOp(originalOp, rootElement) {
 	let lds = []
 	if ('d' in op) {
 		// We don't know if it's a string or list delete
-		let [childElement, /*childIndex*/, parentElement, indexType] = corePathTree.elementAtPath(rootElement, op.p.slice(0, op.p.length-1));
+		let [childElement, /*childIndex*/, parentElement, indexType] = corePathTree.PathTree.elementAtPath(rootElement, op.p.slice(0, op.p.length-1));
 		if (childElement && childElement.nodeName && childElement.nodeName === '#text') {
 			op = {p: op.p, sd: childElement.nodeValue.substring(op.p[op.p.length-1], op.p[op.p.length-1]+op.d)};
 		} else {

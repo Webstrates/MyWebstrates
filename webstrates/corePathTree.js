@@ -17,6 +17,14 @@ The primary purposes of the PathTree are to:
      PathTree node.
 */
 
+const corePathTreeModule = {};
+
+let document;
+
+corePathTreeModule.setDocument = (_document) => {
+	document = _document;
+}
+
 /**
  * Generate a unique identifier (UUID4).
  * @return {UUID}
@@ -264,5 +272,6 @@ PathTree.elementAtPath = function(parentElement, path) {
 	}
 	return PathTree.elementAtPath(childPathNode, path.slice(1));
 };
+corePathTreeModule.PathTree = PathTree;
 
-export const corePathTree = PathTree;
+export const corePathTree = corePathTreeModule;

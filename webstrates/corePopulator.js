@@ -10,7 +10,14 @@ import {corePathTree} from './corePathTree.js';
 
 const corePopulatorModule = {};
 
+
 coreEvents.createEvent('populated');
+
+let document;
+
+corePopulatorModule.setDocument = (_document) => {
+	document = _document;
+}
 
 corePopulatorModule.populate = function(rootElement, doc) {
 	// Empty the document, so we can use it.
@@ -32,7 +39,7 @@ corePopulatorModule.populate = function(rootElement, doc) {
 			// Do not include the parent element in the path, i.e. create corePathTree on the <html>
 			// element rather than the document element.
 			const targetElement = rootElement.childNodes[0];
-			const pathTree = corePathTree.create(targetElement, null, true);
+			const pathTree = corePathTree.PathTree.create(targetElement, null, true);
 			pathTree.check();
 			resolve();
 			coreEvents.triggerEvent('populated', targetElement, webstrateId);

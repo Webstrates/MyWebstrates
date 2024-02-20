@@ -7,6 +7,12 @@ import {coreUtils} from './coreUtils.js';
 
 const coreMutationModule = {};
 
+let document;
+
+coreMutationModule.setDocument = (_document) => {
+	document = _document;
+}
+
 coreEvents.createEvent('mutation');
 
 const observerOptions = {

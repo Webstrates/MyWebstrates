@@ -5,6 +5,12 @@
 import * as diffMatchPatch from "diff-match-patch";
 const coreUtilsModule = {};
 
+let document;
+
+coreUtilsModule.setDocument = (_document) => {
+	document = _document;
+}
+
 let locationObject;
 /**
  * Parses a query string and returns a more friendly object.

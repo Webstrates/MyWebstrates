@@ -6,15 +6,22 @@ import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 await import("es-module-shims")
 
+const documentProxyObj = {};
+const documentProxy = new Proxy(document, documentProxyObj);
+window.documentProxy = documentProxy;
+
 const HOME_SYNC_SERVER = "sync.webstrates.net";
-import {coreEvents} from "./webstrates/coreEvents.js";
 import {coreDOM} from './webstrates/coreDOM.js';
+import {coreEvents} from "./webstrates/coreEvents.js";
 import {corePopulator} from "./webstrates/corePopulator.js";
 import {coreMutation} from './webstrates/coreMutation.js';
 import {coreOpCreator} from './webstrates/coreOpCreator.js';
 import {coreDocument} from './webstrates/coreDocument.js';
 import {coreOpApplier} from './webstrates/coreOpApplier.js';
 import {coreAssets} from './webstrates/coreAssets.js';
+import {coreUtils} from './webstrates/coreUtils.js';
+import {corePathTree} from "./webstrates/corePathTree.js";
+import {coreJsonML} from "./webstrates/coreJsonML";
 import * as setimmediate from "setimmediate";
 
 import {globalObject} from "./webstrates/globalObject.js";
@@ -27,8 +34,18 @@ import {clientManager} from "./webstrates/clientManager";
 import {userObject} from "./webstrates/userObject";
 import {data} from "./webstrates/data";
 
-const documentProxyObj = {};
-const documentProxy = new Proxy(document, documentProxyObj);
+
+coreDOM.setDocuments(documentProxy, document, documentProxyObj);
+
+corePopulator.setDocument(documentProxy);
+coreMutation.setDocument(documentProxy);
+coreOpCreator.setDocument(documentProxy);
+coreDocument.setDocument(documentProxy);
+coreOpApplier.setDocument(documentProxy);
+coreUtils.setDocument(documentProxy);
+corePathTree.setDocument(documentProxy);
+coreJsonML.setDocument(documentProxy);
+protectedMode.setDocument(documentProxy);
 
 window.config = {};
 window.config.isTransientElement = (DOMNode) => DOMNode.matches('transient')
@@ -117,13 +134,11 @@ if (match) {
 
 
 function setupWebstrates(handle) {
-	(function(document, _document, documentProxyObj) {
-		coreDOM.setDocuments(document, _document, documentProxyObj);
 		handle.doc().then((doc) => {
 			window.amDoc = doc;
 			coreOpApplier.listenForOps();
+			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 			corePopulator.populate(coreDOM.externalDocument, doc).then(async => {
-				coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 				coreMutation.emitMutationsFrom(coreDOM.externalDocument);
 				coreOpCreator.emitOpsFromMutations();
 				coreDocument.subscribeToOps();
@@ -143,7 +158,6 @@ function setupWebstrates(handle) {
 				});
 			})
 		});
-	})(documentProxy, document, documentProxyObj);
 }
 
 

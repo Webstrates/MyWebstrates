@@ -6,6 +6,12 @@ import { coreUtils } from "./coreUtils";
 
 const coreDocumentModule = {};
 
+let document;
+
+coreDocumentModule.setDocument = (_document) => {
+	document = _document;
+}
+
 coreEvents.createEvent('receivedOps');
 coreEvents.createEvent('assetAdded');
 coreEvents.createEvent('assetDeleted');

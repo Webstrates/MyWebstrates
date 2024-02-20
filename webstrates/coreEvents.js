@@ -1,6 +1,5 @@
 'use strict';
 
-
 //From: https://github.com/Webstrates/Webstrates/blob/master/client/webstrates/coreEvents.js
 
 const coreEventsModule = {};
