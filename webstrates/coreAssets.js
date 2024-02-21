@@ -71,6 +71,7 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 						d.data = new Uint8Array(arrayBuffer);
 						d.mimeType = file.type;
 						d.fileName = file.name;
+						d.v = 0;
 					});
 					handle.change(d => {
 						d.assets.push({fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId});

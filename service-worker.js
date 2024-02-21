@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v237"
+const CACHE_NAME = "v252"
 const FILES_TO_CACHE = [
 	"/automerge_wasm_bg.wasm",
 	"/es-module-shims.js",
@@ -95,6 +95,7 @@ self.addEventListener("fetch",  (event) => {
 	if (!(event.request.url.match("/new")
 		|| event.request.url.match("/d/(.+)/((.+)\.(.+))")
 		|| event.request.url.match("/d/(.+)/?$")
+		|| event.request.url.match("/d/([a-zA-Z0-9]+)/?(.+)?")
 		|| event.request.url.match(`(${FILES_TO_CACHE.join('|')})$`))) return;
 	let result = handleFetch(event);
 	if (result) event.respondWith(result);
@@ -119,7 +120,7 @@ async function handleFetch(event) {
 
 	</head>
 	<body>
-		Dear sir and/or madam. Here's your new document <a href='/d/${id}/'>/d/${id}</a>!
+		New strate URL is: <a href='/d/${id}/'>/d/${id}</a>!
 	</body>
 	</html>`, {
 			status: 200,
@@ -159,7 +160,7 @@ async function handleFetch(event) {
 		}
 	}
 
-	let match = event.request.url.match("/d/(.+)/?$");
+	let match = event.request.url.match("/d/([a-zA-Z0-9]+)/(.+)?");
 	if (match) {
 		return new Response(`<!DOCTYPE html>
 	<html>

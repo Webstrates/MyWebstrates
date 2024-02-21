@@ -130,5 +130,6 @@ coreEventsModule.createEvent('peerIdReceived');
 coreEventsModule.createEvent('peerListReceived');
 coreEventsModule.createEvent('peerConnected');
 coreEventsModule.createEvent('peerDisconnected');
+coreEventsModule.createEvent('userObjectAdded');
 
 export const coreEvents = coreEventsModule;

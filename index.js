@@ -59,14 +59,13 @@ async function installServiceWorker() {
 	return new Promise((resolve, reject) => {
 		navigator.serviceWorker.getRegistrations().then((registrations) => {
 			if (registrations.length > 0) {
-				console.log("Service worker already installed")
 				resolve();
 			} else {
+				console.log("Installing service worker")
 				navigator.serviceWorker.register("/service-worker.js",{
 					type: "module",
 				}).then(
 					(registration) => {
-						console.log("Service worker registration succeeded:", registration);
 						resolve();
 					},
 					(error) => {
@@ -80,7 +79,6 @@ async function installServiceWorker() {
 }
 
 async function initializeRepo() {
-	console.log("Creating repo")
 	let peerId = "fedistrates-client-" + Math.round(Math.random() * 1000000);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
@@ -111,16 +109,16 @@ function setupMessageChannel(repo) {
 	navigator.serviceWorker.controller.postMessage({ type: "INIT_PORT" }, [messageChannel.port2])
 }
 
-console.log("Installing service worker")
+
 await installServiceWorker();
-console.log("Before registration")
 const repo = await initializeRepo()
 self.repo = repo;
 self.Automerge = Automerge;
 setupMessageChannel(repo);
 
-let match = window.location.pathname.match('/d/(.+)/');
+let match = window.location.pathname.match('/d/([a-zA-Z0-9]+)/?(.+)?');
 if (match) {
+
 	let documentId = match[1];
 	const handle = (await repo).find(`automerge:${documentId}`);
 
@@ -128,9 +126,11 @@ if (match) {
 	if (handle) {
 		setupWebstrates(handle);
 	} else {
-		document.body.innerHTML = "NO SUCH DOCUMENT MAN OR MADAM OR ..."
+		document.body.innerHTML = "No such strate."
 	}
 
+} else {
+	document.body.innerHTML = `Client is installed, go to <a href="/new">/new</a> to create a new strate.`;
 }
 
 

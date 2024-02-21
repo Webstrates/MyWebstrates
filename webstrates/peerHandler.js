@@ -19,6 +19,7 @@ coreEvents.addEventListener('message', (message) => {
 });
 
 function ping() {
+	if (window.handle === undefined) return;
 	handle.broadcast({wa: "ping", body: globalObject.publicObject.clientId});
 	for (let peer of peers) {
 		if (Date.now() - peer.timestamp > 10000) {

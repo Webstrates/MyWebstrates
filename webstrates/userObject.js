@@ -26,7 +26,7 @@ const userObjectModule = {};
 
 // In static mode, the user object is not being sent to the client.
 if (coreUtils.getLocationObject() && !coreUtils.getLocationObject().staticMode) {
-	coreEvents.createEvent('userObjectAdded');
+	//coreEvents.createEvent('userObjectAdded');
 
 	// Delay the loaded event, until the 'userObjectAdded' event has been triggered.
 	//loadedEvent.delayUntil('userObjectAdded');
