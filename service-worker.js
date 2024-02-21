@@ -108,7 +108,7 @@ async function handleFetch(event) {
 		let handle = (await repo).create()
 		handle.change(d => {
 			d.assets = [];
-			d.meta = {};
+			d.meta = {federations: [HOME_SYNC_SERVER]};
 			d.data = {};
 			d.dom = generateDOM("New webstrate")
 		});
