@@ -33,6 +33,7 @@ import {signaling} from "./webstrates/signaling";
 import {clientManager} from "./webstrates/clientManager";
 import {userObject} from "./webstrates/userObject";
 import {data} from "./webstrates/data";
+import {peerHandler} from "./webstrates/peerHandler";
 
 
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
