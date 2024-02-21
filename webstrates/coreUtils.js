@@ -575,6 +575,7 @@ coreUtilsModule.consolidateAutomergePatches = (patches) => {
 coreUtilsModule.generateOpsFromAutomergePatch = (patch) => {
 
 	if (patch.action === 'del') {
+		if (typeof(patch.path[patch.path.length-1]) === 'string') return [{p: patch.path, od: patch.value}];
 		return [{p: patch.path, d: !patch.length ? 1 : patch.length}];
 	}
 	if (patch.action === 'put') {
