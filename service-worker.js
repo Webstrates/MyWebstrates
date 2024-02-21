@@ -5,16 +5,16 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v252"
+const CACHE_NAME = "v258"
 const FILES_TO_CACHE = [
-	"/automerge_wasm_bg.wasm",
-	"/es-module-shims.js",
-	"/es-module-shims.js.map",
-	"/index.html",
-	"/index.js",
-	"/index.js.map",
-	"/main.js",
-	"/main.js.map"
+	"automerge_wasm_bg.wasm",
+	"es-module-shims.js",
+	"es-module-shims.js.map",
+	"index.html",
+	"index.js",
+	"index.js.map",
+	"main.js",
+	"main.js.map"
 ];
 
 const HOME_SYNC_SERVER = "sync.webstrates.net";
@@ -92,6 +92,7 @@ self.addEventListener("activate", async (event) => {
 })
 
 self.addEventListener("fetch",  (event) => {
+	if (self.location.origin !== (new URL(event.request.url)).origin) return;
 	if (!(event.request.url.match("/new")
 		|| event.request.url.match("/d/(.+)/((.+)\.(.+))")
 		|| event.request.url.match("/d/(.+)/?$")

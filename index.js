@@ -62,7 +62,7 @@ async function installServiceWorker() {
 				resolve();
 			} else {
 				console.log("Installing service worker")
-				navigator.serviceWorker.register("/service-worker.js",{
+				navigator.serviceWorker.register("service-worker.js",{
 					type: "module",
 				}).then(
 					(registration) => {

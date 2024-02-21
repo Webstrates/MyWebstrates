@@ -137,7 +137,6 @@ function removeAttribute(rootElement, path, attributeName) {
  * @private
  */
 function insertNode(rootElement, path, value) {
-	console.log("INSERT NODE, MY DOCUMENT IS", rootElement, value, document);
 	const [childElement, childIndex, parentElement] =
 		corePathTree.PathTree.elementAtPath(rootElement, path);
 
