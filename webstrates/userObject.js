@@ -44,6 +44,7 @@ if (coreUtils.getLocationObject() && !coreUtils.getLocationObject().staticMode) 
 		publicObject.userId = message.id;
 		publicObject.userName = message.id;
 		publicObject.displayName = message.id;
+		publicObject.avatarUrl = null;
 		coreEvents.triggerEvent('userObjectAdded');
 	});
 	/*websocket.onjsonmessage = (message) => {

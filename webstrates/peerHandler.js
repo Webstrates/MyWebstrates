@@ -27,7 +27,7 @@ function ping() {
 	}
 }
 
-coreEvents.addEventListener("populated", ping);
+coreEvents.addEventListener("userObjectAdded", ping);
 
 setInterval(ping, 5000);
 
