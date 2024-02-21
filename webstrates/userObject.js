@@ -41,8 +41,9 @@ if (coreUtils.getLocationObject() && !coreUtils.getLocationObject().staticMode) 
 	globalObject.publicObject.user = publicObject;
 
 	coreEvents.addEventListener("peerIdReceived", (message) => {
-		publicObject.clientId = message.id;
-		globalObject.clientId = message.id;
+		publicObject.userId = message.id;
+		publicObject.userName = message.id;
+		publicObject.displayName = message.id;
 		coreEvents.triggerEvent('userObjectAdded');
 	});
 	/*websocket.onjsonmessage = (message) => {
