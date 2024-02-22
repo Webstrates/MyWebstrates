@@ -72,7 +72,8 @@ function signal(wid, message, recipients) {
 		wa: 'publish',
 		d: webstrateId,
 		id: wid,
-		m: message
+		m: message,
+		s: globalObject.publicObject.clientId
 	};
 	if (recipients) {
 		msgObj.recipients = Array.isArray(recipients) ? recipients : [recipients];

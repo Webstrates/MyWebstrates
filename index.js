@@ -34,6 +34,7 @@ import {clientManager} from "./webstrates/clientManager";
 import {userObject} from "./webstrates/userObject";
 import {data} from "./webstrates/data";
 import {peerHandler} from "./webstrates/peerHandler";
+import {signalStream} from "./webstrates/signalStream";
 
 
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
@@ -49,8 +50,14 @@ coreJsonML.setDocument(documentProxy);
 protectedMode.setDocument(documentProxy);
 
 window.config = {};
-window.config.isTransientElement = (DOMNode) => DOMNode.matches('transient')
-window.config.isTransientAttribute = (DOMNode, attributeName) => attributeName.startsWith('transient-')
+window.config.isTransientElement = (DOMNode) => DOMNode.matches('transient');
+window.config.isTransientAttribute = (DOMNode, attributeName) => attributeName.startsWith('transient-');
+window.config.peerConnectionConfig = {
+	'iceServers': [
+		{ urls: 'stun:stun.services.mozilla.com' },
+		{ urls: 'stun:stun.l.google.com:19302' }
+	]
+}
 
 coreEvents.triggerEvent('allModulesLoaded');
 
