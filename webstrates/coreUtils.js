@@ -22,8 +22,8 @@ coreUtilsModule.getLocationObject = () => {
 		return locationObject;
 	}
 
-	let pathname = '/d/' + window.location.pathname.split('/d/')[1];
-	const pathRegex = /^\/d\/([A-Z0-9._-]+)(?:@([A-Z0-9.-:]+))?\/?(?:([A-Z0-9_-]+)\/)?/i.exec(pathname);
+	let pathname = '/s/' + window.location.pathname.split('/s/')[1];
+	const pathRegex = /^\/s\/([A-Z0-9._-]+)(?:@([A-Z0-9.-:]+))?\/?(?:([A-Z0-9_-]+)\/)?/i.exec(pathname);
 	if (!pathRegex) return null;
 	const [ , webstrateId, remoteHost, tagOrVersion] = pathRegex;
 

@@ -93,7 +93,7 @@ async function initializeRepo() {
 			new BrowserWebSocketClientAdapter(`wss://${HOME_SYNC_SERVER}`),
 		],
 		peerId: peerId,
-		sharePolicy: async (peerId) => peerId.includes("storage-server"),
+		sharePolicy: async (peerId) => peerId.includes("storage-server") || peerId.includes("service-worker"),
 	});
 	coreEvents.triggerEvent('peerIdReceived', {id: peerId});
 
@@ -123,7 +123,7 @@ self.repo = repo;
 self.Automerge = Automerge;
 setupMessageChannel(repo);
 
-let match = window.location.pathname.match('/d/([a-zA-Z0-9]+)/?(.+)?');
+let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');
 if (match) {
 
 	let documentId = match[1];
