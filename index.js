@@ -10,7 +10,6 @@ const documentProxyObj = {};
 const documentProxy = new Proxy(document, documentProxyObj);
 window.documentProxy = documentProxy;
 
-const HOME_SYNC_SERVER = "sync.webstrates.net";
 import {coreDOM} from './webstrates/coreDOM.js';
 import {coreEvents} from "./webstrates/coreEvents.js";
 import {corePopulator} from "./webstrates/corePopulator.js";
@@ -22,6 +21,7 @@ import {coreAssets} from './webstrates/coreAssets.js';
 import {coreUtils} from './webstrates/coreUtils.js';
 import {corePathTree} from "./webstrates/corePathTree.js";
 import {coreJsonML} from "./webstrates/coreJsonML";
+import {coreFederation} from "./webstrates/coreFederation";
 import * as setimmediate from "setimmediate";
 
 import {globalObject} from "./webstrates/globalObject.js";
@@ -89,9 +89,7 @@ async function initializeRepo() {
 	let peerId = "fedistrates-client-" + Math.round(Math.random() * 1000000);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
-		network: [
-			new BrowserWebSocketClientAdapter(`wss://${HOME_SYNC_SERVER}`),
-		],
+		network: [],
 		peerId: peerId,
 		sharePolicy: async (peerId) => peerId.includes("storage-server") || peerId.includes("service-worker"),
 	});
@@ -131,6 +129,7 @@ if (match) {
 
 	window.handle = handle;
 	if (handle) {
+		await setupSyncServers(handle);
 		setupWebstrates(handle);
 	} else {
 		document.body.innerHTML = "No such strate."
@@ -138,6 +137,18 @@ if (match) {
 
 } else {
 	document.body.innerHTML = `Client is installed, go to <a href="/new">/new</a> to create a new strate.`;
+}
+
+function setupSyncServers(handle) {
+	return handle.doc().then((doc) => {
+		if (!doc.meta || !doc.meta.federations) return;
+		let syncServers = doc.meta.federations;
+		if (syncServers) {
+			syncServers.forEach((server) => {
+				globalObject.publicObject.addSyncServer(server);
+			})
+		}
+	});
 }
 
 

@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v295"
+const CACHE_NAME = "v304"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -18,13 +18,11 @@ const FILES_TO_CACHE = [
 	"favicon.ico"
 ];
 
-const HOME_SYNC_SERVER = "sync.webstrates.net";
-
 async function initializeRepo() {
 	console.log("Initializing repo in service worker");
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
-		network: [new BrowserWebSocketClientAdapter(`wss://${HOME_SYNC_SERVER}`)],
+		network: [],
 		peerId: "service-worker-" + Math.round(Math.random() * 1000000),
 		sharePolicy: async (peerId) => peerId.includes("fedistrates-client"),
 	})
@@ -111,7 +109,7 @@ async function handleFetch(event) {
 		let handle = (await repo).create()
 		handle.change(d => {
 			d.assets = [];
-			d.meta = {federations: [HOME_SYNC_SERVER]};
+			d.meta = {federations: []};
 			d.data = {};
 			d.dom = generateDOM("New webstrate")
 		});
