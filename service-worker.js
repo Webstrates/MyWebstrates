@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v316"
+const CACHE_NAME = "v317"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -24,7 +24,7 @@ async function initializeRepo() {
 		storage: new IndexedDBStorageAdapter(),
 		network: [],
 		peerId: "service-worker-" + Math.round(Math.random() * 1000000),
-		sharePolicy: async (peerId) => peerId.includes("fedistrates-client"),
+		sharePolicy: async (peerId) => false,
 	})
 
 	await AutomergeWasm.promise
