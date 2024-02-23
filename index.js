@@ -97,6 +97,10 @@ async function initializeRepo() {
 
 	//await AutomergeWasm.promise
 	//Automerge.use(AutomergeWasm)
+	let remoteHost = coreUtils.getLocationObject().remoteHost;
+	if (remoteHost) {
+		repo.networkSubsystem.addNetworkAdapter(new BrowserWebSocketClientAdapter(`wss://${remoteHost}`));
+	}
 
 	return repo
 }
@@ -129,8 +133,13 @@ if (match) {
 
 	window.handle = handle;
 	if (handle) {
-		await setupSyncServers(handle);
-		setupWebstrates(handle);
+		let doc = await handle.doc();
+		if (!doc) {
+			document.body.innerHTML = "No such strate."
+		} else {
+			await setupSyncServers(handle);
+			setupWebstrates(handle);
+		}
 	} else {
 		document.body.innerHTML = "No such strate."
 	}

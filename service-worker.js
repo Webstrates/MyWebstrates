@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v304"
+const CACHE_NAME = "v316"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -133,7 +133,7 @@ async function handleFetch(event) {
 
 	let assetMatch = event.request.url.match("/s/(.+)/((.+)\.(.+))");
 	if (assetMatch) {
-		let docId = assetMatch[1];
+		let docId = assetMatch[1].split("@")[0];
 		let filename = assetMatch[2];
 		let handle = (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
@@ -159,8 +159,8 @@ async function handleFetch(event) {
 			});
 		}
 	}
-
-	let match = event.request.url.match("/s/([a-zA-Z0-9]+)/(.+)?");
+	let urlPart = "/s/" + event.request.url.split("/s/")[1];
+	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
 	if (match) {
 		return new Response(`<!DOCTYPE html>
 	<html>
