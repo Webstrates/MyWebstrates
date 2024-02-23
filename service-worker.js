@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v294"
+const CACHE_NAME = "v295"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -14,7 +14,8 @@ const FILES_TO_CACHE = [
 	"index.js",
 	"index.js.map",
 	"main.js",
-	"main.js.map"
+	"main.js.map",
+	"favicon.ico"
 ];
 
 const HOME_SYNC_SERVER = "sync.webstrates.net";
