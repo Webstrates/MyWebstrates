@@ -76,6 +76,8 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 					handle.change(d => {
 						d.assets.push({fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId});
 					});
+					window.assetHandles.push(assetHandle);
+					let doc = await assetHandle.doc();
 				}
 				reader.readAsArrayBuffer(file);
 			}

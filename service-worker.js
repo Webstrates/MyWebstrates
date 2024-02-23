@@ -5,7 +5,7 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 
-const CACHE_NAME = "v317"
+const CACHE_NAME = "v329"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -61,14 +61,20 @@ self.addEventListener("message", async (event) => {
 		;(await repo).networkSubsystem.addNetworkAdapter(
 			new MessageChannelNetworkAdapter(clientPort, { useWeakRef: true })
 		)
+	} else if (event.data && event.data.type === "FEDERATE") {
+		const url = event.data.host
+		addSyncServer(`wss://${url}`);
 	}
-})
+});
 
+let syncServers = [];
 function addSyncServer(url) {
 	repo.then((repo) => {
-		repo.networkSubsystem.addNetworkAdapter(new BrowserWebSocketClientAdapter(url))
+		if (!syncServers.includes(url)) {
+			repo.networkSubsystem.addNetworkAdapter(new BrowserWebSocketClientAdapter(url));
+			syncServers.push(url);
 		}
-	)
+		});
 }
 self.addSyncServer = addSyncServer
 

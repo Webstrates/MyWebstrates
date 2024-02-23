@@ -59,6 +59,8 @@ window.config.peerConnectionConfig = {
 	]
 }
 
+window.assetHandles = [];
+
 coreEvents.triggerEvent('allModulesLoaded');
 
 
@@ -138,6 +140,7 @@ if (match) {
 			document.body.innerHTML = "No such strate."
 		} else {
 			await setupSyncServers(handle);
+			await setupAssetHandles(handle);
 			setupWebstrates(handle);
 		}
 	} else {
@@ -156,6 +159,16 @@ function setupSyncServers(handle) {
 			syncServers.forEach((server) => {
 				globalObject.publicObject.addSyncServer(server);
 			})
+		}
+	});
+}
+
+function setupAssetHandles(handle) {
+	return handle.doc().then(async (doc) => {
+		if (!doc.assets) return;
+		for (let asset of doc.assets) {
+			let assetHandle = (await repo).find(`automerge:${asset.id}`);
+			window.assetHandles.push(assetHandle);
 		}
 	});
 }
