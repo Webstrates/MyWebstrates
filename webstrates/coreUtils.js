@@ -138,6 +138,16 @@ coreUtilsModule.randomString = (size = 8,
 };
 
 /**
+ * Get a random UUID.
+ * @returns {string}
+ */
+coreUtilsModule.generateUUID = () => {
+	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+		(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+	);
+}
+
+/**
  * Get child nodes of an element. If the element is a fragment, get the content's child nodes.
  * @param  {DOMElement} parentElement Element to get child nodes of.
  * @return {array}                    List of child nodes.

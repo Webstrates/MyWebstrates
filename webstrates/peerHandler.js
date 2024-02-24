@@ -1,7 +1,8 @@
 'use strict';
 
 import { coreEvents } from './coreEvents.js';
-import {globalObject} from "./globalObject";
+import {globalObject} from "./globalObject.js";
+import {coreUtils} from "./coreUtils.js";
 
 let peers = [];
 
@@ -20,7 +21,7 @@ coreEvents.addEventListener('message', (message) => {
 
 function ping() {
 	if (window.handle === undefined) return;
-	handle.broadcast({wa: "ping", body: globalObject.publicObject.clientId});
+	handle.broadcast({wa: "ping", body: globalObject.publicObject.clientId, uuid: coreUtils.generateUUID()});
 	for (let peer of peers) {
 		if (Date.now() - peer.timestamp > 10000) {
 			peers = peers.filter(p => p !== peer);

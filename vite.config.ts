@@ -18,7 +18,7 @@ export default defineConfig({
                 assetFileNames: `[name].[ext]`,
             },
         },
-        minify: false
+        minify: false,
     },
     optimizeDeps: {
         esbuildOptions: { target: "esnext" },

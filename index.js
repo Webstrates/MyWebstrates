@@ -194,9 +194,25 @@ function setupWebstrates(handle) {
 					window.amDoc = change.doc;
 				});
 
-				handle.on('ephemeral-message', (message) => {
-					coreEvents.triggerEvent('message', message.message, message.senderId);
+				// Ephemeral messages might be sent multiple times, so we need to deduplicate them.
+				let messageMap = new Map();
+				handle.on('ephemeral-message', (messageObj) => {
+					let message = messageObj.message;
+					if (!message.uuid) return;
+					if (!messageMap.has(message.uuid)) {
+						coreEvents.triggerEvent('message', message, messageObj.senderId);
+						messageMap.set(message.uuid, Date.now());
+					}
 				});
+				// We clear out seen messages every 10 seconds.
+				setInterval(() => {
+					let now = Date.now();
+					for (let [uuid, timestamp] of messageMap) {
+						if (now - timestamp > 10000) {
+							messageMap.delete(uuid);
+						}
+					}
+				}, 10000);
 			})
 		});
 }
