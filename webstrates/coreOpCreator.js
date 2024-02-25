@@ -108,7 +108,7 @@ function attributeMutation(mutation, targetPathNode) {
 	// about the current state.
 	let ops;
 	if (oldValue === null || newValue.length < 50 || !jsonmlAttrs[cleanAttributeName]
-		|| !coreConfig.attributeValueDiffing || mutation.target.hasAttribute('op-throttle')) {
+		|| !config.attributeValueDiffing || mutation.target.hasAttribute('op-throttle')) {
 		ops = [{ od: oldValue, oi: newValue, p: path }];
 	} else {
 		ops = coreUtils.patchesToOps(path, jsonmlAttrs[cleanAttributeName], newValue);

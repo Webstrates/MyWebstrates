@@ -58,6 +58,7 @@ window.config.peerConnectionConfig = {
 		{ urls: 'stun:stun.l.google.com:19302' }
 	]
 }
+window.config.attributeValueDiffing = false;
 
 window.assetHandles = [];
 
