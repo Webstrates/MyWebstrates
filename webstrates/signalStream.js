@@ -146,7 +146,6 @@ function WebRTCClient(ownId, recipientId, clientRecipientId, node, { listener, s
 
 	const handleMessage = (message) => {
 		if(!peerConnection) start();
-
 		if (message.sdp && Object.keys(message.sdp).length > 0) {
 			peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp)).then(function() {
 				// Only create answers in response to offers
@@ -162,7 +161,7 @@ function WebRTCClient(ownId, recipientId, clientRecipientId, node, { listener, s
 	const gotIceCandidate = (event) => {
 		if(event.candidate != null) {
 			node.webstrate.signal({
-				ice: event.candidate,
+				ice: JSON.parse(JSON.stringify(event.candidate)),
 				__internal_webrtc: true,
 				senderId: ownId,
 				recipientId
