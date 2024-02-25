@@ -6,7 +6,7 @@ import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js";
 
-const CACHE_NAME = "v383"
+const CACHE_NAME = "v384"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -138,7 +138,7 @@ async function handleFetch(event) {
 		});
 	}
 
-	let assetMatch = event.request.url.match("/s/([a-zA-Z0-[^\/]+)/(.+)");
+	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
 	if (assetMatch) {
 		let docId = assetMatch[1].split("@")[0];
 		let filename = assetMatch[2];
