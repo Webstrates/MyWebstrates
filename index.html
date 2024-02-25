@@ -4,5 +4,45 @@
 </head>
 <html>
 <script type="module" src="index.js"></script>
-<div id="root">Loading...</div>
+<body>
+<style>
+    body {
+        width: 800px;
+        margin: auto;
+        background-color: white;
+        font-family: helvetica, arial, sans-serif;
+        text-align: center;
+    }
+    html {
+        background-color: white;
+    }
+    h1 {
+        color: #333;
+        text-align: center;
+    }
+    #localfirst {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100px;
+    }
+
+    #logo {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 130px;
+    }
+    img {
+        width: 100%;
+    }
+</style>
+<div id="localfirst"><img src="local-first.png"></div>
+<div id="logo"><img src="mywebstrates.png"></div>
+<h1><em>my.webstrates.net</em><br>Local-first Webstrates</h1>
+
+<p id="content"></p>
+
+</body>
+
 </html>

@@ -6,7 +6,7 @@ import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js";
 
-const CACHE_NAME = "v369"
+const CACHE_NAME = "v383"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",

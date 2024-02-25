@@ -149,7 +149,7 @@ if (match) {
 	}
 
 } else {
-	document.body.innerHTML = `Client is installed, go to <a href="/new">/new</a> to create a new strate.`;
+	document.querySelector("#content").innerHTML = `Client is installed, go to <a href="/new">/new</a> to create a new strate.`;
 }
 
 function setupSyncServers(handle) {
