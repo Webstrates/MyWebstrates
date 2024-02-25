@@ -4,8 +4,9 @@ import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
+import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js";
 
-const CACHE_NAME = "v368"
+const CACHE_NAME = "v369"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -137,10 +138,21 @@ async function handleFetch(event) {
 		});
 	}
 
-	let assetMatch = event.request.url.match("/s/(.+)/((.+)\.(.+))");
+	let assetMatch = event.request.url.match("/s/([a-zA-Z0-[^\/]+)/(.+)");
 	if (assetMatch) {
 		let docId = assetMatch[1].split("@")[0];
 		let filename = assetMatch[2];
+		// Check if it is a zip file
+		let path = filename.split('/');
+		let isZip = false;
+		let zipPath;
+		if (path.length > 1 && path[0].endsWith(".zip")) {
+			isZip = true;
+			filename = path[0];
+			zipPath = path.slice(1).join('/');
+		}
+
+
 		let handle = (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
 		let assetId;
@@ -153,6 +165,26 @@ async function handleFetch(event) {
 			let assetHandle = (await repo).find(`automerge:${assetId}`);
 			let assetDoc = await assetHandle.doc();
 			const uint8Array = assetDoc.data;
+			if (isZip) {
+				let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
+				let blobReader = new BlobReader(blob);
+				let zip = new ZipReader(blobReader);
+				let blobWriter = new BlobWriter();
+				let entries = await zip.getEntries();
+				let entry = entries.find(e => e.filename === zipPath);
+				if (entry) {
+					const blob = await entry.getData(blobWriter);
+					return new Response(blob,{
+						status: 200,
+						statusText: 'OK'
+					})
+				} else {
+					return new Response("No such asset", {
+						status: 404,
+						statusText: 'No such asset'
+					});
+				}
+			}
 			const blob = new Blob([uint8Array], { type: assetDoc.mimetype });
 			return new Response(blob,{
 				status: 200,

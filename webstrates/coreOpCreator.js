@@ -11,7 +11,6 @@ import {coreJsonML} from './coreJsonML.js'
 //const coreJsonML = require('./coreJsonML');
 
 //const json0 = require('ot-json0/lib/json0');
-const coreConfig = window.config;
 
 const coreOpCreatorModule = {};
 
