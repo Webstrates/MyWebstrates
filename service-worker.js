@@ -10,7 +10,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
 
-const CACHE_NAME = "v386"
+const CACHE_NAME = "v387"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -74,12 +74,18 @@ self.addEventListener("message", async (event) => {
 
 let syncServers = [];
 function addSyncServer(url) {
-	repo.then((repo) => {
-		if (!syncServers.includes(url)) {
-			repo.networkSubsystem.addNetworkAdapter(new BrowserWebSocketClientAdapter(url));
-			syncServers.push(url);
-		}
+	return new Promise((resolve, reject) => {
+		repo.then((repo) => {
+			if (!syncServers.includes(url)) {
+				let clientAdapter = new BrowserWebSocketClientAdapter(url)
+				repo.networkSubsystem.addNetworkAdapter(clientAdapter);
+				syncServers.push(url);
+				setTimeout(resolve, 500); //TODO: FIX!!
+			} else {
+				resolve();
+			}
 		});
+	});
 }
 self.addSyncServer = addSyncServer
 
@@ -251,7 +257,7 @@ async function handleFetch(event) {
 				statusText: 'No such strate'
 			});
 		}
-		let importMap = doc.importMap ? doc.importMap : `{"imports": {}}`
+		let importMap = doc && doc.importMap ? doc.importMap : `{"imports": {}}`
 		return new Response(`<!DOCTYPE html>
 	<html>
 	<head>
