@@ -6,7 +6,7 @@ import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js";
 
-const CACHE_NAME = "v384"
+const CACHE_NAME = "v385"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -145,13 +145,17 @@ async function handleFetch(event) {
 		// Check if it is a zip file
 		let path = filename.split('/');
 		let isZip = false;
+		let isZipDir = false;
 		let zipPath;
-		if (path.length > 1 && path[0].endsWith(".zip")) {
+		if (path[0].endsWith(".zip?dir") || (path[1] && path[1].endsWith("?dir"))) {
+			isZip = true;
+			isZipDir = true;
+			filename = path[0].split('?')[0];
+		} else if (path.length > 1 && path[0].endsWith(".zip")) {
 			isZip = true;
 			filename = path[0];
 			zipPath = path.slice(1).join('/');
 		}
-
 
 		let handle = (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
@@ -165,6 +169,21 @@ async function handleFetch(event) {
 			let assetHandle = (await repo).find(`automerge:${assetId}`);
 			let assetDoc = await assetHandle.doc();
 			const uint8Array = assetDoc.data;
+			if (isZip && isZipDir) {
+				let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
+				let blobReader = new BlobReader(blob);
+				let zip = new ZipReader(blobReader);
+				let entries = await zip.getEntries();
+				let result = entries.map(e => e.filename);
+				let json = JSON.stringify(result);
+				return new Response(json,{
+					status: 200,
+					statusText: 'OK',
+					headers: {
+						'Content-Type': 'application/json'
+					}
+				})
+			}
 			if (isZip) {
 				let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
 				let blobReader = new BlobReader(blob);
