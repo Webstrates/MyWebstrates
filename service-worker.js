@@ -4,7 +4,11 @@ import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
-import { ZipReader, BlobReader, BlobWriter } from "@zip.js/zip.js";
+import { ZipReader, BlobReader, BlobWriter, TextWriter } from "@zip.js/zip.js";
+import * as parse5 from "parse5";
+import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
+
+
 
 const CACHE_NAME = "v385"
 const FILES_TO_CACHE = [
@@ -111,14 +115,31 @@ self.addEventListener("fetch",  (event) => {
 async function handleFetch(event) {
 	const responseFromCache = await caches.match(event.request);
 	if (responseFromCache) return responseFromCache;
-	let newMatch = event.request.url.match("/new");
+	let newMatch = event.request.url.match(/(\/new)((\?prototypeUrl=)(.+))?/);
+	let jsonML;
 	if (newMatch) {
+		let prototypeZipURL = newMatch[4];
+		if (prototypeZipURL) {
+			// read the zip file from the prototypeZipURL and extract the content of index.html in it if it exists
+			let prototypeZip = await fetch(prototypeZipURL);
+			let prototypeZipBlob = await prototypeZip.blob();
+			let prototypeZipReader = new BlobReader(prototypeZipBlob);
+			let zip = new ZipReader(prototypeZipReader);
+			let entries = await zip.getEntries();
+			let indexHtmlEntry = entries.find(e => e.filename === "index.html");
+			if (indexHtmlEntry) {
+				// get text data from index.html
+				const textWriter = new TextWriter();
+				let html = await indexHtmlEntry.getData(textWriter);
+				jsonML = parse5.parse(html, { treeAdapter: jsonmlAdapter })[0];
+			}
+		}
 		let handle = (await repo).create()
 		handle.change(d => {
 			d.assets = [];
 			d.meta = {federations: []};
 			d.data = {};
-			d.dom = generateDOM("New webstrate")
+			d.dom = jsonML ? jsonML : generateDOM("New webstrate")
 		});
 		let id = handle.documentId;
 		return new Response(`<!DOCTYPE html>

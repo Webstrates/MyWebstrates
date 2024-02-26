@@ -25,6 +25,7 @@
 		"@zip.js/zip.js": "^2.7.35",
 		"diff-match-patch": "^1.0.5",
 		"es-module-shims": "^1.8.0",
+		"parse5": "^7.1.2",
 		"setimmediate": "^1.0.5",
 		"verbal-expressions": "^1.0.2"
 	},
