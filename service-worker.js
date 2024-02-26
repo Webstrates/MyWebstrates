@@ -10,7 +10,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
 
-const CACHE_NAME = "v385"
+const CACHE_NAME = "v386"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -240,11 +240,26 @@ async function handleFetch(event) {
 	let urlPart = "/s/" + event.request.url.split("/s/")[1];
 	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
 	if (match) {
+		let documentId = match[1];
+		let syncServer = match[2] ? match[2].split('/')[0] : undefined;
+		if (syncServer) await addSyncServer(`wss://${syncServer}`);
+		let docHandle = (await repo).find(`automerge:${documentId}`);
+		let doc = await docHandle.doc();
+		if (!doc) {
+			return new Response("No such strate.", {
+				status: 404,
+				statusText: 'No such strate'
+			});
+		}
+		let importMap = doc.importMap ? doc.importMap : `{"imports": {}}`
 		return new Response(`<!DOCTYPE html>
 	<html>
 	<head>
+		<script type="importmap">${importMap}</script>
 		<script type="module" crossorigin src="../../main.js"></script>
 		<link rel="modulepreload" crossorigin href="../../index.js">
+		
+
 	</head>
 	<body>
 	</body>
