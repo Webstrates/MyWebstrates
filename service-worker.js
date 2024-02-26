@@ -80,7 +80,9 @@ function addSyncServer(url) {
 				let clientAdapter = new BrowserWebSocketClientAdapter(url)
 				repo.networkSubsystem.addNetworkAdapter(clientAdapter);
 				syncServers.push(url);
-				setTimeout(resolve, 500); //TODO: FIX!!
+				repo.networkSubsystem.on('ready', () => {
+					resolve();
+				});
 			} else {
 				resolve();
 			}
@@ -251,12 +253,6 @@ async function handleFetch(event) {
 		if (syncServer) await addSyncServer(`wss://${syncServer}`);
 		let docHandle = (await repo).find(`automerge:${documentId}`);
 		let doc = await docHandle.doc();
-		if (!doc) {
-			return new Response("No such strate.", {
-				status: 404,
-				statusText: 'No such strate'
-			});
-		}
 		let importMap = doc && doc.importMap ? doc.importMap : `{"imports": {}}`
 		return new Response(`<!DOCTYPE html>
 	<html>
