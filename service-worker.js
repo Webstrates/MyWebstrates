@@ -253,7 +253,7 @@ async function handleFetch(event) {
 		if (syncServer) await addSyncServer(`wss://${syncServer}`);
 		let docHandle = (await repo).find(`automerge:${documentId}`);
 		let doc = await docHandle.doc();
-		let importMap = doc && doc.importMap ? doc.importMap : `{"imports": {}}`
+		let importMap = doc && doc.meta && doc.meta.importMap ? JSON.stringify(doc.meta.importMap) : `{"imports": {}}`
 		return new Response(`<!DOCTYPE html>
 	<html>
 	<head>
