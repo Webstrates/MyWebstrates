@@ -10,7 +10,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
 
-const CACHE_NAME = "v387"
+const CACHE_NAME = "v393"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -129,7 +129,7 @@ async function handleFetch(event) {
 		let prototypeZipURL = newMatch[4];
 		if (prototypeZipURL) {
 			// read the zip file from the prototypeZipURL and extract the content of index.html in it if it exists
-			let prototypeZip = await fetch(prototypeZipURL);
+			let prototypeZip = await fetch(prototypeZipURL, {credentials: 'same-origin'});
 			let prototypeZipBlob = await prototypeZip.blob();
 			let prototypeZipReader = new BlobReader(prototypeZipBlob);
 			let zip = new ZipReader(prototypeZipReader);
@@ -143,28 +143,15 @@ async function handleFetch(event) {
 			}
 		}
 		let handle = (await repo).create()
-		handle.change(d => {
+		await handle.change(d => {
 			d.assets = [];
 			d.meta = {federations: []};
 			d.data = {};
 			d.dom = jsonML ? jsonML : generateDOM("New webstrate")
 		});
 		let id = handle.documentId;
-		return new Response(`<!DOCTYPE html>
-	<html>
-	<head>
-
-	</head>
-	<body>
-		New strate URL is: <a href='s/${id}/'>s/${id}</a>!
-	</body>
-	</html>`, {
-			status: 200,
-			statusText: 'OK',
-			headers: {
-				'Content-Type': 'text/html'
-			}
-		});
+		await new Promise(r => setTimeout(r, 500));
+		return Response.redirect(`/s/${id}/`);
 	}
 
 	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");

@@ -149,7 +149,7 @@ if (match) {
 	}
 
 } else {
-	document.querySelector("#content").innerHTML = `Client is installed, go to <a href="/new">/new</a> to create a new strate.`;
+	document.querySelector("#content").innerHTML = `<strong>Client is installed</strong><br><br><a href="/new">Create a new blank webstrate.</a><br><a href="/new?prototypeUrl=https://cdn.jsdelivr.net/gh/Webstrates/Codestrates-v2@master/prototypes/web.zip">Create a new codestrate.</a>`;
 }
 
 function setupSyncServers(handle) {
