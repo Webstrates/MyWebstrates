@@ -80,7 +80,7 @@ function addSyncServer(url) {
 				let clientAdapter = new BrowserWebSocketClientAdapter(url)
 				repo.networkSubsystem.addNetworkAdapter(clientAdapter);
 				syncServers.push(url);
-				repo.networkSubsystem.on('ready', () => {
+				clientAdapter.on('ready', (p) => {
 					resolve();
 				});
 			} else {
