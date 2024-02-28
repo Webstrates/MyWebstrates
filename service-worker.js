@@ -10,7 +10,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
 
-const CACHE_NAME = "v393"
+const CACHE_NAME = "v399"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -155,7 +155,7 @@ async function handleFetch(event) {
 	}
 
 	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
-	if (assetMatch) {
+	if (assetMatch && !(assetMatch[2] && assetMatch[2].startsWith('?'))) {
 		let docId = assetMatch[1].split("@")[0];
 		let filename = assetMatch[2];
 		// Check if it is a zip file
