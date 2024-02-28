@@ -304,8 +304,8 @@ coreUtilsModule.isTranscluded = () => window.frameElement && window.parent !== w
  * @public
  */
 coreUtilsModule.sameParentDomain = () => {
-	const a = document.createElement('a');
-	a.href = document.referrer;
+	const a = window.document.createElement('a');
+	a.href = window.document.referrer;
 	return a.host === location.host;
 };
 

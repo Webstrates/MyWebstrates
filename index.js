@@ -10,8 +10,8 @@ const documentProxyObj = {};
 const documentProxy = new Proxy(document, documentProxyObj);
 window.documentProxy = documentProxy;
 
-import {coreDOM} from './webstrates/coreDOM.js';
 import {coreEvents} from "./webstrates/coreEvents.js";
+import {coreDOM} from './webstrates/coreDOM.js';
 import {corePopulator} from "./webstrates/corePopulator.js";
 import {coreMutation} from './webstrates/coreMutation.js';
 import {coreOpCreator} from './webstrates/coreOpCreator.js';
