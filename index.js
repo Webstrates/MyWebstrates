@@ -136,7 +136,12 @@ if (match) {
 
 	window.handle = handle;
 	if (handle) {
+		document.body.innerHTML = "Looking up strate...";
+		let timeout = setTimeout(() => {
+			document.body.innerHTML = "Could not find the strate.";
+		}, 5000);
 		let doc = await handle.doc();
+		clearTimeout(timeout);
 		if (!doc) {
 			document.body.innerHTML = "No such strate."
 		} else {
