@@ -31,7 +31,9 @@ function ping() {
 	}
 }
 
-coreEvents.addEventListener("userObjectAdded", ping);
+coreEvents.addEventListener("userObjectAdded", () => {
+	setTimeout(ping, 500);
+});
 
 setInterval(ping, 5000);
 
