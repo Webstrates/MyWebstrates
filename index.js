@@ -102,7 +102,7 @@ async function initializeRepo() {
 	//Automerge.use(AutomergeWasm)
 	let remoteHost = coreUtils.getLocationObject().remoteHost;
 	if (remoteHost) {
-		repo.networkSubsystem.addNetworkAdapter(new BrowserWebSocketClientAdapter(`wss://${remoteHost}`));
+		coreFederation.addSyncServerToRepo(`wss://${remoteHost}`, repo);
 	}
 
 	return repo

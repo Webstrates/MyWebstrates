@@ -11,7 +11,23 @@ globalObject.publicObject.addSyncServer = (host) => {
 	});
 	const messageChannel = new MessageChannel();
 	navigator.serviceWorker.controller.postMessage({ type: "FEDERATE", host: host }, [messageChannel.port2])
-	repo.networkSubsystem.addNetworkAdapter(new BrowserWebSocketClientAdapter(`wss://${host}`));
+	return coreFederationModule.addSyncServerToRepo(`wss://${host}`, repo);
+}
+
+const syncServers = [];
+coreFederationModule.addSyncServerToRepo = function(url, repo) {
+	return new Promise((resolve, reject) => {
+		if (!syncServers.includes(url)) {
+			let clientAdapter = new BrowserWebSocketClientAdapter(url)
+			repo.networkSubsystem.addNetworkAdapter(clientAdapter);
+			syncServers.push(url);
+			clientAdapter.on('ready', (p) => {
+				resolve();
+			});
+		} else {
+			resolve();
+		}
+	});
 }
 
 export const coreFederation = coreFederationModule;
