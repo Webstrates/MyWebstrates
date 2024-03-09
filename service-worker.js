@@ -10,7 +10,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
 
-const CACHE_NAME = "v432"
+const CACHE_NAME = "v449"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",

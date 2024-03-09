@@ -33,3 +33,38 @@ Object.defineProperty(globalObject.publicObject, 'restore', {
 		}
 	}
 });
+
+Object.defineProperty(globalObject.publicObject, 'copy', {
+		value: async (local = false) => {
+			let currentDoc = await handle.doc();
+			let newDocHandle = repo.create();
+			await newDocHandle.change(doc => {
+				for (const key in currentDoc) {
+					doc[key] = structuredClone(currentDoc[key]);
+				}
+				if (local && doc.meta) {
+					doc.meta.federations = [];
+				}
+			});
+			setTimeout(() => {
+				window.open(`/s/${newDocHandle.documentId}/`, '_blank');
+			}, 500);
+		}
+});
+
+Object.defineProperty(globalObject.publicObject, 'clone', {
+	value: async () => {
+		let clonedDocHandle = repo.clone(handle);
+		setTimeout(() => {
+			window.open(`/s/${clonedDocHandle.documentId}/`, '_blank');
+		}, 500);
+	}
+});
+
+Object.defineProperty(globalObject.publicObject, 'merge', {
+	value: async (otherStrateId) => {
+		let otherStrateHandle = repo.find(`automerge:${otherStrateId}`);
+		let otherStrateDoc = await otherStrateHandle.doc();
+		handle.merge(otherStrateHandle);
+	}
+});
