@@ -220,7 +220,7 @@ async function handleFetch(event) {
 					});
 				}
 			}
-			const blob = new Blob([uint8Array], { type: assetDoc.mimetype });
+			const blob = new Blob([uint8Array], { type: assetDoc.mimeType });
 			return new Response(blob,{
 				status: 200,
 				statusText: 'OK'
