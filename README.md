@@ -1,5 +1,4 @@
-# fedistrates-prototype-2
-The second fedistrates prototype
+# MyWebstrates
 
 # To build:
 ```bash
