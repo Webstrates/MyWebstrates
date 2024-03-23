@@ -11,6 +11,7 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, "index.html"),
                 "service-worker": resolve(__dirname, "service-worker.js"),
+                "P2PSetup": resolve(__dirname, "p2p/P2PSetup.html"),
             },
             output: {
                 entryFileNames: `[name].js`,

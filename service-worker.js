@@ -9,7 +9,6 @@ import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
-
 const CACHE_NAME = "v449"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
@@ -29,7 +28,7 @@ async function initializeRepo() {
 		storage: new IndexedDBStorageAdapter(),
 		network: [],
 		peerId: "service-worker-" + Math.round(Math.random() * 1000000),
-		sharePolicy: async (peerId) => false,
+		sharePolicy: async (peerId) => peerId.includes("p2p"),
 	})
 
 	await AutomergeWasm.promise
@@ -115,6 +114,7 @@ self.addEventListener("fetch",  (event) => {
 		|| event.request.url.match("/s/(.+)/((.+)\.(.+))")
 		|| event.request.url.match("/s/(.+)/?$")
 		|| event.request.url.match("/s/([a-zA-Z0-9]+)/?(.+)?")
+		|| event.request.url.match("/p2p")
 		|| event.request.url.match(`(${FILES_TO_CACHE.join('|')})$`))) return;
 	let result = handleFetch(event);
 	if (result) event.respondWith(result);
@@ -123,6 +123,12 @@ self.addEventListener("fetch",  (event) => {
 async function handleFetch(event) {
 	const responseFromCache = await caches.match(event.request);
 	if (responseFromCache) return responseFromCache;
+	let p2pMatch = event.request.url.match(/\/p2p/);
+	if (p2pMatch) {
+		// Respond with the file P2PSetup.html
+		let response = await fetch("p2p/P2PSetup.html");
+		return response;
+	}
 	let newMatch = event.request.url.match(/(\/new)((\?prototypeUrl=)(.+))?/);
 	let jsonML;
 	if (newMatch) {

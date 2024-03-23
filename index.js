@@ -95,7 +95,7 @@ async function initializeRepo() {
 		storage: new IndexedDBStorageAdapter(),
 		network: [],
 		peerId: peerId,
-		sharePolicy: async (peerId) => peerId.includes("storage-server") || peerId.includes("service-worker"),
+		sharePolicy: async (peerId) => peerId.includes("storage-server") || peerId.includes("service-worker") || peerId.includes("p2p"),
 	});
 	coreEvents.triggerEvent('peerIdReceived', {id: peerId});
 
