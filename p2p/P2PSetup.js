@@ -117,7 +117,7 @@ function processResponse(sdp){
 document.getElementById("challenge").addEventListener("click",async ()=>{
 	let target = document.getElementById("qr-challenge");
 	let code = await createChallenge();
-	console.log("Challenge:",code);
+	await navigator.clipboard.writeText(code.sdp);
 	new QRCode(target, {
 		text: code.sdp,
 		width: 2600,
@@ -165,7 +165,7 @@ document.getElementById("receiver").addEventListener("click", async ()=>{
 
 		let target = document.getElementById("qr-response");
 		let code = await createResponse({type:"offer",sdp:decodedText});
-		console.log("Challenge:", code);
+		await navigator.clipboard.writeText(code.sdp);
 		document.getElementById("output").innerText = code.sdp;
 		new QRCode(target, {
 			text: code.sdp,
@@ -199,6 +199,7 @@ document.getElementById("receiver-input").addEventListener("click", async ()=>{
 	let e = prompt();
 	let target = document.getElementById("qr-response");
 	let code = await createResponse({type:"offer", sdp:e+"\n"});
+	await navigator.clipboard.writeText(code.sdp);
 	console.log("Challenge:", code);
 	new QRCode(target, {
 		text: code.sdp,
