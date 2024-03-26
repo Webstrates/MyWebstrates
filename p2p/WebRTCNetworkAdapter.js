@@ -1,17 +1,25 @@
-import {NetworkAdapter} from "@automerge/automerge-repo"
+import {cbor as cborHelpers, NetworkAdapter} from "@automerge/automerge-repo"
+
+const { encode, decode } = cborHelpers
 
 export class WebRTCNetworkAdapter extends NetworkAdapter {
-	constructor(channel, options) {
+	constructor(connection, channel, options) {
 		super()
+		this.connection = connection;
 		this.channel = channel;
 		this.options = options;
+		setInterval(() => {
+			this.send({'type': 'ping'});
+		}, 1000);
+
 	}
 
 	connect(peerId, peerMetaData) {
 		this.peerId = peerId;
 		this.peerMetadata = peerMetaData;
 		this.channel.onmessage = (e) => {
-			const message = JSON.parse(e.data);
+			const message = decode(new Uint8Array(e.data));
+			console.log("Got message", message);
 
 			if ("targetId" in message && message.targetId !== this.peerId) {
 				return
@@ -22,12 +30,12 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 			switch (type) {
 				case "arrive": {
 					const {peerMetadata} = message
-					this.channel.send(JSON.stringify({
+					this.send({
 						senderId: this.peerId,
 						targetId: senderId,
 						type: "welcome",
 						peerMetadata: this.peerMetadata,
-					}))
+					})
 					this.announceConnection(senderId, peerMetadata)
 				}
 					break
@@ -50,12 +58,12 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 			}
 		}
 
-		let payload = JSON.stringify({
+		let payload = {
 			senderId: this.peerId,
 			type: "arrive",
 			peerMetaData,
-		});
-		this.channel.send(payload)
+		};
+		this.send(payload)
 
 		this.emit("ready", { network: this })
 
@@ -69,15 +77,26 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 	}
 
 	send(message) {
+		let payload;
 		if ("data" in message) {
-			let payload = {
+			payload = {
 				...message,
 				data: Array.from(message.data)
 			}
-			this.channel.send(JSON.stringify(payload))
 		} else {
-			this.channel.send(message)
+			payload = message;
 		}
+		console.log("Sending", payload);
+		const encoded = encode(payload);
+		console.log("Encoded", encoded);
+		console.log("Size", encoded.byteLength / 1024)
+		const arrayBuf = this.toArrayBuffer(encoded);
+		this.channel.send(arrayBuf);
+	}
+
+	toArrayBuffer(bytes) {
+		const { buffer, byteOffset, byteLength } = bytes
+		return buffer.slice(byteOffset, byteOffset + byteLength)
 	}
 
 	disconnect() {
