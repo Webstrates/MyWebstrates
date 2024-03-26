@@ -19,7 +19,11 @@ const FILES_TO_CACHE = [
 	"index.js.map",
 	"main.js",
 	"main.js.map",
-	"favicon.ico"
+	"favicon.ico",
+	"preload-helper.js",
+	"NodeWSServerAdapter.js",
+	"local-first.png",
+	"mywebstrates.png"
 ];
 
 async function initializeRepo() {
