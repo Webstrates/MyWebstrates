@@ -27,11 +27,16 @@ function createChallenge(){
 	let channel = connection.createDataChannel("test");
 	channel.onopen = ()=>{
 		document.getElementById("output").innerText = "Connection established";
-		const adapter = new WebRTCNetworkAdapter(channel);
+		const adapter = new WebRTCNetworkAdapter(connection, channel);
 		repo.networkSubsystem.addNetworkAdapter(adapter);
 	};
 	channel.onclose = ()=>{
+		console.log("Connection closed")
 		document.getElementById("output").innerText = "Channel closed";
+	};
+	channel.onerror = (e)=>{
+		console.log("Error",e);
+		document.getElementById("output").innerText = "Error: "+e;
 	};
 
 	// Arbitrary limitation: Generate an offer 1s after the first candidate resolves
@@ -67,7 +72,7 @@ function createResponse(sdp){
 		let establishedChannel = event.channel;
 		establishedChannel.onopen = ()=>{
 			document.getElementById("output").innerText = "Connection established";
-			const adapter = new WebRTCNetworkAdapter(establishedChannel);
+			const adapter = new WebRTCNetworkAdapter(connection, establishedChannel);
 			repo.networkSubsystem.addNetworkAdapter(adapter);
 		};
 		establishedChannel.onclose = ()=>{
