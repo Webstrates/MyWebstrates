@@ -5,11 +5,12 @@ import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-index
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 import { ZipReader, BlobReader, BlobWriter, TextWriter } from "@zip.js/zip.js";
+import mime from 'mime';
 import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 
 
-const CACHE_NAME = "v450"
+const CACHE_NAME = "v473"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -135,6 +136,7 @@ async function handleFetch(event) {
 	}
 	let newMatch = event.request.url.match(/(\/new)((\?prototypeUrl=)(.+))?/);
 	let jsonML;
+	let assets = [];
 	if (newMatch) {
 		let prototypeZipURL = newMatch[4];
 		if (prototypeZipURL) {
@@ -144,6 +146,7 @@ async function handleFetch(event) {
 			let prototypeZipReader = new BlobReader(prototypeZipBlob);
 			let zip = new ZipReader(prototypeZipReader);
 			let entries = await zip.getEntries();
+			entries.forEach(e => e.filename = e.filename.split('/').pop());
 			let indexHtmlEntry = entries.find(e => e.filename === "index.html");
 			if (indexHtmlEntry) {
 				// get text data from index.html
@@ -151,10 +154,26 @@ async function handleFetch(event) {
 				let html = await indexHtmlEntry.getData(textWriter);
 				jsonML = parse5.parse(html, { treeAdapter: jsonmlAdapter })[0];
 			}
+			for (let entry of entries) {
+				if (entry.filename !== "index.html") { // It's an asset
+					let blob = await entry.getData(new BlobWriter());
+					let data = new Uint8Array(await blob.arrayBuffer());
+					let assetHandle = (await repo).create();
+					let mimeType = mime.getType(entry.filename);
+					await assetHandle.change(d => {
+						d.data = data;
+						d.mimetype = mimeType;
+						d.fileName = entry.filename;
+					});
+					let assetId = assetHandle.documentId;
+					let asset = {id: assetId, fileName: entry.filename, mimeType: mimeType};
+					assets.push(asset);
+				}
+			}
 		}
 		let handle = (await repo).create()
 		await handle.change(d => {
-			d.assets = [];
+			d.assets = assets;
 			d.meta = {federations: []};
 			d.data = {};
 			d.dom = jsonML ? jsonML : generateDOM("New webstrate")
