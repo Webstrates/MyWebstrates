@@ -157,7 +157,7 @@ document.getElementById("response").addEventListener("click", async ()=>{
 
 	let html5QrcodeScanner = new Html5QrcodeScanner(
 		"scan-response",
-		{ fps: 10, qrbox: {width: 250, height: 250} },
+		{ fps: 10, qrbox: {width: 600, height: 600} },
 		/* verbose= */ false);
 	html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 })
@@ -195,7 +195,7 @@ document.getElementById("receiver").addEventListener("click", async ()=>{
 
 	let html5QrcodeScanner = new Html5QrcodeScanner(
 		"scan-challenge",
-		{ fps: 10, qrbox: {width: 250, height: 250} },
+		{ fps: 10, qrbox: {width: 600, height: 600} },
 		/* verbose= */ false);
 	html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 })
