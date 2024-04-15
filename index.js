@@ -155,7 +155,10 @@ if (match) {
 	} else {
 		document.body.innerHTML = "No such strate."
 	}
-
+} else if ((window.location.pathname + window.location.search).match('/\?s/([a-zA-Z0-9]+)/?(.+)?')) {
+	setTimeout(() => {
+		window.location = window.location.pathname + window.location.search.slice(1);
+	}, 500);
 } else {
 	document.querySelector("#content").innerHTML = `<strong>Client is installed</strong><br><br><a href="/new">Create a new blank webstrate.</a><br><a href="/new?prototypeUrl=https://cdn.jsdelivr.net/gh/Webstrates/Codestrates-v2@master/prototypes/web.zip">Create a new codestrate.</a>`;
 }
