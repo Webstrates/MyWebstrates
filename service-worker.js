@@ -8,6 +8,7 @@ import { ZipReader, BlobReader, BlobWriter, TextWriter } from "@zip.js/zip.js";
 import mime from 'mime';
 import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
+import { md5 } from 'js-md5';
 
 
 const CACHE_NAME = "v473"
@@ -26,6 +27,8 @@ const FILES_TO_CACHE = [
 	"local-first.png",
 	"mywebstrates.png"
 ];
+
+const stratesWithCache = new Map();
 
 async function initializeRepo() {
 	console.log("Initializing repo in service worker");
@@ -113,8 +116,80 @@ self.addEventListener("activate", async (event) => {
 	clients.claim()
 })
 
-self.addEventListener("fetch",  (event) => {
-	if (self.location.origin !== (new URL(event.request.url)).origin) return;
+/**
+ * This function takes a request stores the response data and headers in an automerge doc
+ * @param request
+ * @returns {Promise<(DocHandle<unknown>|Response)[]>}
+ */
+const createDataDoc = async function(request) {
+	let clonedRequest = request.clone()
+	let response = await fetch(clonedRequest);
+	if (response.type === 'opaque')	response = await fetch(clonedRequest.url);
+	let responseClone = response.clone()
+	let headers = {};
+	for (let [key, value] of responseClone.headers.entries()) {
+		headers[key] = value;
+	}
+	let data = new Uint8Array(await responseClone.arrayBuffer());
+	// We compute the checksum to see if we've seen this file before
+	// The checksum -> docid pair is stored in indexeddb
+	let checksum = md5(data);
+	let knownAlready = await getDocId(checksum);
+	let handle;
+	if (knownAlready) {
+		handle = (await repo).find(knownAlready);
+	} else {
+		handle = (await repo).create();
+		await handle.change(d => {
+			d.data = data;
+			d.url = request.url;
+			d.headers = headers;
+		});
+		await storeDocId(checksum, handle.documentId);
+	}
+	return [handle, response];
+}
+
+self.addEventListener("fetch",  async (event) => {
+	// First we will check if it is a remote URL that is being fetched.
+	if (self.location.origin !== (new URL(event.request.url)).origin)
+	{
+		// We now check if the webstrate has caching enabled
+		let strateWithCaching = stratesWithCache.get(event.clientId);
+		if (strateWithCaching) {
+			// If it does, we fetch the strate document
+			let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
+			let doc = await docHandle.doc()
+			if (doc && !doc.cache) {
+				// If a cache hasn't been built yet, we will create one with the first URL that's being requested
+				let [dataDocHandle, newResponse] = await createDataDoc(event.request)
+				let cache = {};
+				cache[event.request.url] = dataDocHandle.documentId;
+				await docHandle.change(d => d.cache = cache);
+				return newResponse;
+			} else if (doc && doc.cache && !doc.cache[event.request.url]) {
+				// if the cache exists, but the file hasn't been cached, we cache it
+				let [dataDocHandle, newResponse] = await createDataDoc(event.request);
+				await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
+				return newResponse;
+			} else if (doc && doc.cache && doc.cache[event.request.url]) {
+				// If the file is cached we fetch it
+				let dataDocId = 	doc.cache[event.request.url];
+				let dataDocHandle = await (await repo).find(`automerge:${dataDocId}`);
+				let dataDoc = await dataDocHandle.doc();
+				const arrayBuffer = dataDoc.data;
+				let headers = new Headers();
+				for (let header in dataDoc.headers) {
+					headers.set(header, dataDoc.headers[header]);
+				}
+				event.respondWith((async () => {
+					return new Response(arrayBuffer, {headers: headers})
+				})());
+				return;
+			}
+		}
+		return;
+	}
 	if (!(event.request.url.match("/new")
 		|| event.request.url.match("/s/(.+)/((.+)\.(.+))")
 		|| event.request.url.match("/s/(.+)/?$")
@@ -269,7 +344,11 @@ async function handleFetch(event) {
 		if (syncServer) await addSyncServer(`wss://${syncServer}`);
 		let docHandle = (await repo).find(`automerge:${documentId}`);
 		let doc = await docHandle.doc();
-		let importMap = doc && doc.meta && doc.meta.importMap ? JSON.stringify(doc.meta.importMap) : `{"imports": {}}`
+		let importMap = doc && doc.meta && doc.meta.importMap ? JSON.stringify(doc.meta.importMap) : `{"imports": {}}`;
+		let caching = doc && doc.meta && doc.meta.caching ? doc.meta.caching : false;
+		if (caching) {
+			stratesWithCache.set(event.resultingClientId, docHandle.documentId);
+		}
 		return new Response(`<!DOCTYPE html>
 	<html>
 	<head>
@@ -326,4 +405,59 @@ function generateDOM(name) {
  */
 function random(min, max) {
 	return Math.floor(min + Math.random() * (max - min));
+};
+
+
+const openDatabase = () => {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('docCache', 1);
+
+		request.onupgradeneeded = function(event) {
+			// Create an object store if it doesn't exist
+			let db = event.target.result;
+			if (!db.objectStoreNames.contains('hashToDocId')) {
+				db.createObjectStore('hashToDocId', { keyPath: 'key' });
+			}
+		};
+
+		request.onerror = function(event) {
+			reject('IndexedDB database error: ', event.target.error);
+		};
+
+		request.onsuccess = function(event) {
+			resolve(event.target.result);
+		};
+	});
+};
+
+const storeDocId = async (key, value) => {
+	const db = await openDatabase();
+	const transaction = db.transaction('hashToDocId', 'readwrite');
+	const store = transaction.objectStore('hashToDocId');
+	const request = store.put({ key: key, value: value });
+
+	return new Promise((resolve, reject) => {
+		request.onsuccess = function() {
+			resolve('Data saved successfully');
+		};
+		request.onerror = function(event) {
+			reject('Data save failed: ', event.target.error);
+		};
+	});
+};
+
+const getDocId = async (key) => {
+	const db = await openDatabase();
+	const transaction = db.transaction('hashToDocId', 'readonly');
+	const store = transaction.objectStore('hashToDocId');
+	const request = store.get(key);
+
+	return new Promise((resolve, reject) => {
+		request.onsuccess = function() {
+			resolve(request.result ? request.result.value : null);
+		};
+		request.onerror = function(event) {
+			reject('Data fetch failed: ', event.target.error);
+		};
+	});
 };
