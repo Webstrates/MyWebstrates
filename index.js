@@ -62,6 +62,7 @@ window.config.peerConnectionConfig = {
 window.config.attributeValueDiffing = false;
 
 window.assetHandles = [];
+window.cacheHandles = [];
 
 coreEvents.triggerEvent('allModulesLoaded');
 
@@ -148,6 +149,7 @@ if (match) {
 		} else {
 			await setupSyncServers(handle);
 			await setupAssetHandles(handle);
+			await setupCacheHandles(handle);
 			setupWebstrates(handle);
 		}
 	} else {
@@ -176,6 +178,16 @@ function setupAssetHandles(handle) {
 		for (let asset of doc.assets) {
 			let assetHandle = (await repo).find(`automerge:${asset.id}`);
 			window.assetHandles.push(assetHandle);
+		}
+	});
+}
+
+function setupCacheHandles(handle) {
+	return handle.doc().then(async (doc) => {
+		if (!doc.cache) return;
+		for (let cached in doc.cache) {
+			let cachedHandle = (await repo).find(`automerge:${doc.cache[cached]}`);
+			window.cacheHandles.push(cachedHandle);
 		}
 	});
 }
