@@ -37,6 +37,7 @@ import {peerHandler} from "./webstrates/peerHandler";
 import {signalStream} from "./webstrates/signalStream";
 import {coreVersioning} from "./webstrates/coreVersioning";
 import {cache} from "./webstrates/cache"
+import {importMap} from "./webstrates/importMap"
 
 
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
