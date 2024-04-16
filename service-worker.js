@@ -144,6 +144,7 @@ const createDataDoc = async function(request) {
 			d.data = data;
 			d.url = request.url;
 			d.headers = headers;
+			d.ts = Date.now();
 		});
 		await storeDocId(checksum, handle.documentId);
 	}
