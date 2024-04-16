@@ -39,7 +39,6 @@ import {coreVersioning} from "./webstrates/coreVersioning";
 import {cache} from "./webstrates/cache"
 import {importMap} from "./webstrates/importMap"
 
-
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
 
 corePopulator.setDocument(documentProxy);
@@ -134,10 +133,13 @@ setupMessageChannel(repo);
 
 let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');
 if (match) {
-
 	let documentId = match[1];
-	const handle = (await repo).find(`automerge:${documentId}`);
-
+	let handle;
+	try {
+		handle = repo.find(`automerge:${documentId}`);
+	} catch (e) {
+		throw e;
+	}
 	window.handle = handle;
 	if (handle) {
 		document.body.innerHTML = "Looking up strate...";
