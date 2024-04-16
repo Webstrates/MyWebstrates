@@ -123,8 +123,19 @@ self.addEventListener("activate", async (event) => {
  */
 const createDataDoc = async function(request) {
 	let clonedRequest = request.clone()
-	let response = await fetch(clonedRequest);
-	if (response.type === 'opaque')	response = await fetch(clonedRequest.url);
+	let response;
+	try {
+		response = await fetch(clonedRequest);
+	} catch (e) {
+		console.warn(`Could not cache ${request.url}.`)
+		return [null, response]
+	}
+	try {
+		if (response.type === 'opaque')	response = await fetch(clonedRequest.url);
+	} catch (e) {
+		console.warn(`Could not cache ${request.url}.`)
+		return [null, response]
+	}
 	let responseClone = response.clone()
 	let headers = {};
 	for (let [key, value] of responseClone.headers.entries()) {
@@ -164,14 +175,18 @@ self.addEventListener("fetch",  async (event) => {
 			if (doc && !doc.cache) {
 				// If a cache hasn't been built yet, we will create one with the first URL that's being requested
 				let [dataDocHandle, newResponse] = await createDataDoc(event.request)
-				let cache = {};
-				cache[event.request.url] = dataDocHandle.documentId;
-				await docHandle.change(d => d.cache = cache);
+				if (dataDocHandle) {
+					let cache = {};
+					cache[event.request.url] = dataDocHandle.documentId;
+					await docHandle.change(d => d.cache = cache);
+				}
 				return newResponse;
 			} else if (doc && doc.cache && !doc.cache[event.request.url]) {
 				// if the cache exists, but the file hasn't been cached, we cache it
 				let [dataDocHandle, newResponse] = await createDataDoc(event.request);
-				await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
+				if (dataDocHandle) {
+					await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
+				}
 				return newResponse;
 			} else if (doc && doc.cache && doc.cache[event.request.url]) {
 				// If the file is cached we fetch it
