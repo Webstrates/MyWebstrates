@@ -1,4 +1,4 @@
-//import * as AutomergeWasm from "@automerge/automerge-wasm"
+import * as AutomergeWasm from "@automerge/automerge-wasm"
 import { next as Automerge } from "@automerge/automerge"
 import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
@@ -101,7 +101,7 @@ async function initializeRepo() {
 	});
 	coreEvents.triggerEvent('peerIdReceived', {id: peerId});
 
-	//await AutomergeWasm.promise
+	await AutomergeWasm.promise
 	//Automerge.use(AutomergeWasm)
 	let remoteHost = coreUtils.getLocationObject().remoteHost;
 	if (remoteHost) {
@@ -138,6 +138,8 @@ if (match) {
 	try {
 		handle = repo.find(`automerge:${documentId}`);
 	} catch (e) {
+		console.log("Failed to load strate document from Automerge");
+		console.log(e);
 		throw e;
 	}
 	window.handle = handle;
