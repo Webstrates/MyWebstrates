@@ -11,7 +11,7 @@ globalObject.publicObject.addSyncServer = (host) => {
 	});
 	const messageChannel = new MessageChannel();
 	navigator.serviceWorker.controller.postMessage({ type: "FEDERATE", host: host }, [messageChannel.port2])
-	return coreFederationModule.addSyncServerToRepo(`wss://${host}`, repo);
+	return coreFederationModule.addSyncServerToRepo(`wss://${host}`, automerge.repo);
 }
 
 const syncServers = [];
