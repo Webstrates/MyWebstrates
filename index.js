@@ -66,6 +66,7 @@ window.assetHandles = [];
 window.cacheHandles = [];
 const automerge = {}
 let _automerge = {};
+setupAutomergeObject();
 
 coreEvents.triggerEvent('allModulesLoaded');
 
@@ -223,7 +224,7 @@ function setupAutomergeObject() {
 function setupWebstrates(handle) {
 		handle.doc().then((doc) => {
 			_automerge.doc = doc;
-			setupAutomergeObject();
+
 			coreOpApplier.listenForOps();
 			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 			corePopulator.populate(coreDOM.externalDocument, doc).then(async => {
