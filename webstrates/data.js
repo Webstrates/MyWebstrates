@@ -2,7 +2,7 @@ import { globalObject } from './globalObject.js';
 import { coreEvents } from './coreEvents.js';
 
 let updateData = (changeFunc) => {
-	handle.change((doc => {
+	automerge.handle.change((doc => {
 		changeFunc(doc.data);
 	}));
 }

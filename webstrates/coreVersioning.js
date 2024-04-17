@@ -8,14 +8,14 @@ const versioningModule = {};
  * Get the current version number of the strate.
  */
 Object.defineProperty(globalObject.publicObject, 'version', {
-	get: () => Automerge.getAllChanges(amDoc).length-1,
+	get: () => Automerge.getAllChanges(automerge.doc).length-1,
 });
 
 /**
  * Get the version hash of the current version.
  */
 Object.defineProperty(globalObject.publicObject, 'versionHash', {
-	get: () => Automerge.getHeads(amDoc)[0],
+	get: () => Automerge.getHeads(automerge.doc)[0],
 });
 
 /**
@@ -55,7 +55,7 @@ versioningModule.restore = async (handle, version) => {
  */
 Object.defineProperty(globalObject.publicObject, 'restore', {
 	value: async (version) => {
-		await versioningModule.restore(handle, version);
+		await versioningModule.restore(automerge.handle, version);
 	}
 });
 
@@ -102,7 +102,7 @@ versioningModule.copy = async (handle, repo, options = {local: false, version: u
  */
 Object.defineProperty(globalObject.publicObject, 'copy', {
 		value: async (options = {local: false, version: undefined}) => {
-			let newDocHandle = await versioningModule.copy(handle, repo, options);
+			let newDocHandle = await versioningModule.copy(automerge.handle, repo, options);
 			setTimeout(() => {
 				window.open(`/s/${newDocHandle.documentId}/`, '_blank');
 			}, 500);
@@ -126,7 +126,7 @@ versioningModule.clone = async (handle, repo) => {
  */
 Object.defineProperty(globalObject.publicObject, 'clone', {
 	value: async () => {
-		let clonedDocHandle = await versioningModule.clone(handle, repo);
+		let clonedDocHandle = await versioningModule.clone(automerge.handle, repo);
 		setTimeout(() => {
 			window.open(`/s/${clonedDocHandle.documentId}/`, '_blank');
 		}, 500);
@@ -141,7 +141,7 @@ Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
 		let otherStrateHandle = repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
-		handle.merge(otherStrateHandle);
+		automerge.handle.merge(otherStrateHandle);
 	}
 });
 

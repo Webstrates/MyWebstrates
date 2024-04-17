@@ -51,7 +51,7 @@ function elementAtPath(snapshot, path) {
 // Snapshot is optional (and only used in the internal recursion).
 	if (!path) {
 		path = snapshot;
-		snapshot = window.amDoc.dom;
+		snapshot = automerge.doc.dom;
 	}
 	if (path.length > 0 && typeof path[path.length-1] === 'string') {
 		return null;

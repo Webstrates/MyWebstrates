@@ -78,7 +78,7 @@ function signal(wid, message, recipients) {
 	if (recipients) {
 		msgObj.recipients = Array.isArray(recipients) ? recipients : [recipients];
 	}
-	window.handle.broadcast({wa: "signal", body: msgObj, uuid: coreUtils.generateUUID()})
+	automerge.handle.broadcast({wa: "signal", body: msgObj, uuid: coreUtils.generateUUID()})
 }
 
 function subscribe(wid) {

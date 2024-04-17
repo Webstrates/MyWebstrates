@@ -20,7 +20,7 @@ coreEvents.createEvent('dataUpdated');
 coreDocumentModule.subscribeToOps = function() {
 	coreEvents.addEventListener('createdOps', (ops) => {
 		window.suppressChanges = true;
-		handle.change(function(doc) {
+		automerge.handle.change(function(doc) {
 			applyOpsToDoc(ops, doc);
 		})
 		window.suppressChanges = false;

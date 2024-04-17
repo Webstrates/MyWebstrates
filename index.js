@@ -64,6 +64,8 @@ window.config.attributeValueDiffing = false;
 
 window.assetHandles = [];
 window.cacheHandles = [];
+const automerge = {}
+let _automerge = {};
 
 coreEvents.triggerEvent('allModulesLoaded');
 
@@ -127,7 +129,7 @@ function setupMessageChannel(repo) {
 
 await installServiceWorker();
 const repo = await initializeRepo()
-self.repo = repo;
+_automerge.repo = repo;
 self.Automerge = Automerge;
 setupMessageChannel(repo);
 
@@ -142,7 +144,7 @@ if (match) {
 		console.log(e);
 		throw e;
 	}
-	window.handle = handle;
+	_automerge.handle = handle;
 	if (handle) {
 		document.body.innerHTML = "Looking up strate...";
 		let timeout = setTimeout(() => {
@@ -201,10 +203,27 @@ function setupCacheHandles(handle) {
 	});
 }
 
+function setupAutomergeObject() {
+	window.automerge = automerge;
+	Object.defineProperty(automerge, "handle", {
+		get: () => _automerge.handle,
+		set: () => {throw new Error("Cannot set handle")}
+	});
+	Object.defineProperty(automerge, "doc", {
+		get: () => _automerge.doc,
+		set: () => {throw new Error("Cannot set doc")}
+	});
+	Object.defineProperty(automerge, "repo", {
+		get: () => _automerge.repo,
+		set: () => {throw new Error("Cannot set repo")}
+	});
+}
+
 
 function setupWebstrates(handle) {
 		handle.doc().then((doc) => {
-			window.amDoc = doc;
+			_automerge.doc = doc;
+			setupAutomergeObject();
 			coreOpApplier.listenForOps();
 			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
 			corePopulator.populate(coreDOM.externalDocument, doc).then(async => {
@@ -219,7 +238,7 @@ function setupWebstrates(handle) {
 						let patches = change.patches;
 						coreDocument.handlePatches(patches);
 					}
-					window.amDoc = change.doc;
+					_automerge.doc = change.doc;
 				});
 
 				// Ephemeral messages might be sent multiple times, so we need to deduplicate them.

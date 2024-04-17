@@ -33,8 +33,8 @@ Object.defineProperty(publicObject, 'clear', {
 
 Object.defineProperty(publicObject, 'cached', {
 	get: () => {
-		if (!amDoc.cache) return {};
-		return structuredClone(amDoc.cache);
+		if (!automerge.doc.cache) return {};
+		return structuredClone(automerge.doc.cache);
 	},
 	set: () => { throw new Error('Cached cannot directly be modified'); },
 	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
@@ -51,21 +51,21 @@ Object.defineProperty(publicObject, 'remove', {
 })
 
 function remove(url) {
-	if (!amDoc.cache || !amDoc.cache[url]) throw new Error(`${url} is not cached`);
-	handle.change(d => delete d.cache[url]);
+	if (!automerge.doc.cache || !automerge.doc.cache[url]) throw new Error(`${url} is not cached`);
+	automerge.handle.change(d => delete d.cache[url]);
 }
 
 function enable() {
-	handle.change(d => d.meta.caching = true);
+	automerge.handle.change(d => d.meta.caching = true);
 }
 
 function disable() {
-	handle.change(d => d.meta.caching = false);
+	automerge.handle.change(d => d.meta.caching = false);
 }
 
 function clear()
 {
-	handle.change(d => d.cache = {});
+	automerge.handle.change(d => d.cache = {});
 }
 
 

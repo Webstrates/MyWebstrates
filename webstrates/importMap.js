@@ -40,23 +40,23 @@ Object.defineProperty(publicObject, 'removeImport', {
 })
 
 function remove() {
-	if (!amDoc.meta.importMap) return;
-	handle.change(d => delete d.meta.importMap);
+	if (!automerge.doc.meta.importMap) return;
+	automerge.handle.change(d => delete d.meta.importMap);
 }
 
 function create(map = { imports: {}}) {
-	if (amDoc.meta.importMap) return;
-	handle.change(d => d.meta.importMap = map);
+	if (automerge.doc.meta.importMap) return;
+	automerge.handle.change(d => d.meta.importMap = map);
 }
 
 function addImport(path, value) {
-	if (!amDoc.meta.importMap) create();
-	handle.change(d => d.meta.importMap.imports[path] = value);
+	if (!automerge.doc.meta.importMap) create();
+	automerge.handle.change(d => d.meta.importMap.imports[path] = value);
 }
 
 function removeImport(path) {
-	if (!amDoc.meta.importMap || !amDoc.meta.importMap.imports || !amDoc.meta.importMap.imports[path]) return;
-	handle.change(d => delete d.meta.importMap.imports[path]);
+	if (!automerge.doc.meta.importMap || !automerge.doc.meta.importMap.imports || !automerge.doc.meta.importMap.imports[path]) return;
+	automerge.handle.change(d => delete d.meta.importMap.imports[path]);
 
 }
 
