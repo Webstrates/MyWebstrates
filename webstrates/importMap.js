@@ -15,6 +15,11 @@ Object.defineProperty(publicObject, 'create', {
 	enumerable: false
 });
 
+Object.defineProperty(publicObject, 'content', {
+	get: () => structuredClone(automerge.doc.meta.importMap),
+	set: (importMap) => replace(importMap)
+})
+
 Object.defineProperty(publicObject, 'remove', {
 	get: () => remove,
 	set: () => { throw new Error('Internal disable method should not be modified'); },
@@ -34,14 +39,6 @@ Object.defineProperty(publicObject, 'addImport', {
 Object.defineProperty(publicObject, 'removeImport', {
 	get: () => removeImport,
 	set: () => { throw new Error('Internal removeImport method should not be modified'); },
-	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
-	// due to the circular reference.
-	enumerable: false
-})
-
-Object.defineProperty(publicObject, 'replace', {
-	get: () => replace,
-	set: () => { throw new Error('Internal replace method should not be modified'); },
 	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
 	// due to the circular reference.
 	enumerable: false
