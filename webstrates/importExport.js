@@ -98,7 +98,7 @@ async function loadFromZip() {
 				await otherHandle.doc();
 			}
 			setTimeout(() => {
-				window.open(`/s/${rootHandle.documentId}/`, '_blank').focus();
+				window.open(`/s/${rootHandle.documentId}/`, '_blank');
 			});
 		}
 		reader.readAsArrayBuffer(file);
