@@ -11,7 +11,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 
 
-const CACHE_NAME = "v560"
+const CACHE_NAME = "v581"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",

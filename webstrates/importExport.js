@@ -19,7 +19,7 @@ Object.defineProperty(globalObject.publicObject, 'loadFromZip', {
  * @returns {Promise<void>}
  */
 async function download() {
-	let docs = [{id: `rootDoc-${automerge.handle.documentId}`, doc: automerge.doc}];
+	let docs = [{id: `rootDoc-${automerge.handle.documentId}`, doc: await automerge.handle.doc()}];
 	for (let asset of webstrate.assets) {
 		const handle = await automerge.repo.find(`automerge:${asset.id}`);
 		const assetDoc = await handle.doc();
@@ -80,11 +80,11 @@ async function loadFromZip() {
 				}
 			}
 			let cache = {};
-			if (rootDoc.cache) {
-				let cache = structuredClone(rootDoc.cache);
+			if (Object.hasOwn(rootDoc, 'cache')) {
+				cache = structuredClone(rootDoc.cache);
 				for (let cacheItem in cache) {
 					for (let oldDocId in otherHandles) {
-						if (cache[cacheItem] === oldDocId) {
+						if (cache[cacheItem] == oldDocId) {
 							cache[cacheItem] = otherHandles[oldDocId].documentId;
 						}
 					}
@@ -92,14 +92,14 @@ async function loadFromZip() {
 			}
 			await rootHandle.change(d => {
 				d.assets = assets
-				d.cache = cache;
+				d.cache = JSON.parse(JSON.stringify(cache));
 			});
 			for (let otherHandle of Object.values(otherHandles)) {
 				await otherHandle.doc();
 			}
 			setTimeout(() => {
 				window.open(`/s/${rootHandle.documentId}/`, '_blank');
-			});
+			}, 1000)
 		}
 		reader.readAsArrayBuffer(file);
 	});
