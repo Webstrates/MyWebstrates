@@ -26,7 +26,7 @@ async function download() {
 		docs.push({id: handle.documentId, doc: assetDoc});
 	}
 	if (automerge.doc.cache) {
-		for (let cacheItem of Object.values(webstrate.cache)) {
+		for (let cacheItem of Object.values(automerge.doc.cache)) {
 			const handle = await automerge.repo.find(`automerge:${cacheItem}`);
 			const cacheDoc = await handle.doc();
 			docs.push({id: handle.documentId, doc: cacheDoc});
