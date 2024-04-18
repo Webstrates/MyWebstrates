@@ -38,6 +38,7 @@ import {signalStream} from "./webstrates/signalStream";
 import {coreVersioning} from "./webstrates/coreVersioning";
 import {cache} from "./webstrates/cache"
 import {importMap} from "./webstrates/importMap"
+import {importExport} from "./webstrates/importExport"
 
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
 

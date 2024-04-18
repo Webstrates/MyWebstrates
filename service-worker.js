@@ -11,7 +11,7 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 
 
-const CACHE_NAME = "v517"
+const CACHE_NAME = "v552"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -19,11 +19,15 @@ const FILES_TO_CACHE = [
 	"index.html",
 	"index.js",
 	"index.js.map",
+	"index2.js",
+	"index2.js.map",
+	"P2PSetup.js",
+	"P2PSetup.js.map",
 	"main.js",
 	"main.js.map",
 	"favicon.ico",
 	"preload-helper.js",
-	"NodeWSServerAdapter.js",
+	"preload-helper.js.map",
 	"local-first.png",
 	"mywebstrates.png"
 ];
