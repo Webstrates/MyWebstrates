@@ -102,7 +102,7 @@ versioningModule.copy = async (handle, repo, options = {local: false, version: u
  */
 Object.defineProperty(globalObject.publicObject, 'copy', {
 		value: async (options = {local: false, version: undefined}) => {
-			let newDocHandle = await versioningModule.copy(automerge.handle, repo, options);
+			let newDocHandle = await versioningModule.copy(automerge.handle, automerge.repo, options);
 			setTimeout(() => {
 				window.open(`/s/${newDocHandle.documentId}/`, '_blank');
 			}, 500);
@@ -139,7 +139,7 @@ Object.defineProperty(globalObject.publicObject, 'clone', {
  */
 Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
-		let otherStrateHandle = repo.find(`automerge:${otherStrateId}`);
+		let otherStrateHandle = automerge.repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
 		automerge.handle.merge(otherStrateHandle);
 	}
