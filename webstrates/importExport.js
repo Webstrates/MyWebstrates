@@ -13,12 +13,24 @@ Object.defineProperty(globalObject.publicObject, 'loadFromZip', {
 	enumerable: false
 });
 
+/**
+ * Download the current strate and its assets as a zip file.
+ * Each document is stored as a separate binary file in the zip archive.
+ * @returns {Promise<void>}
+ */
 async function download() {
 	let docs = [{id: `rootDoc-${automerge.handle.documentId}`, doc: automerge.doc}];
 	for (let asset of webstrate.assets) {
 		const handle = await automerge.repo.find(`automerge:${asset.id}`);
 		const assetDoc = await handle.doc();
 		docs.push({id: handle.documentId, doc: assetDoc});
+	}
+	if (automerge.doc.cache) {
+		for (let cacheItem of Object.values(webstrate.cache)) {
+			const handle = await automerge.repo.find(`automerge:${cacheItem}`);
+			const cacheDoc = await handle.doc();
+			docs.push({id: handle.documentId, doc: cacheDoc});
+		}
 	}
 	let data = docs.map(d => {return {id: d.id, doc: Automerge.save(d.doc)}})
 	const blobWriter = new BlobWriter("application/zip");
@@ -48,31 +60,46 @@ async function loadFromZip() {
 			const zipReader = new ZipReader(blobReader);
 			const entries = await zipReader.getEntries();
 			let rootHandle;
-			let assetHandles = {};
+			let otherHandles = {};
 			for (let entry of entries) {
 				const docData = await entry.getData(new Uint8ArrayWriter());
 				let handle = await automerge.repo.import(docData);
 				if (entry.filename.startsWith('rootDoc-')) {
 					rootHandle = handle;
 				} else {
-					assetHandles[entry.filename] = handle;
+					otherHandles[entry.filename] = handle;
 				}
 			}
 			let rootDoc = await rootHandle.doc();
 			let assets = structuredClone(rootDoc.assets);
 			for (let asset of assets) {
-				for (let oldAssetId in assetHandles) {
-					if (asset.id === oldAssetId) {
-						asset.id = assetHandles[oldAssetId].documentId;
+				for (let oldDocId in otherHandles) {
+					if (asset.id === oldDocId) {
+						asset.id = otherHandles[oldDocId].documentId;
 					}
 				}
 			}
-			await rootHandle.change(d => d.assets = assets);
-			for (let assetHandle of Object.values(assetHandles)) {
-				await assetHandle.doc();
+			let cache = {};
+			if (rootDoc.cache) {
+				let cache = structuredClone(rootDoc.cache);
+				for (let cacheItem in cache) {
+					for (let oldDocId in otherHandles) {
+						if (cache[cacheItem] === oldDocId) {
+							cache[cacheItem] = otherHandles[oldDocId].documentId;
+						}
+					}
+				}
 			}
-
-			window.open(`/s/${rootHandle.documentId}/`, '_blank').focus();
+			await rootHandle.change(d => {
+				d.assets = assets
+				d.cache = cache;
+			});
+			for (let otherHandle of Object.values(otherHandles)) {
+				await otherHandle.doc();
+			}
+			setTimeout(() => {
+				window.open(`/s/${rootHandle.documentId}/`, '_blank').focus();
+			});
 		}
 		reader.readAsArrayBuffer(file);
 	});
