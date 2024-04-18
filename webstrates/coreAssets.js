@@ -66,7 +66,7 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 				let reader = new FileReader();
 				reader.onload = async function (e) {
 					let arrayBuffer = e.target.result;
-					let assetHandle = (await repo).create()
+					let assetHandle = (await automerge.repo).create()
 					await assetHandle.change(d => {
 						d.data = new Uint8Array(arrayBuffer);
 						d.mimeType = file.type;
