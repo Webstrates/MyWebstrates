@@ -14,7 +14,7 @@ Object.defineProperty(globalObject.publicObject, 'loadFromZip', {
 });
 
 async function download() {
-	let docs = [{id: automerge.handle.documentId, doc: automerge.doc}];
+	let docs = [{id: `rootDoc-${automerge.handle.documentId}`, doc: automerge.doc}];
 	for (let asset of webstrate.assets) {
 		const handle = await automerge.repo.find(`automerge:${asset.id}`);
 		const assetDoc = await handle.doc();
@@ -52,7 +52,7 @@ async function loadFromZip() {
 			for (let entry of entries) {
 				const docData = await entry.getData(new Uint8ArrayWriter());
 				let handle = await automerge.repo.import(docData);
-				if (entry.filename === file.name.split('.')[0]) {
+				if (entry.filename.startsWith('rootDoc-')) {
 					rootHandle = handle;
 				} else {
 					assetHandles[entry.filename] = handle;
