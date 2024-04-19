@@ -1,6 +1,6 @@
 import * as AutomergeWasm from "@automerge/automerge-wasm"
 import * as Automerge from "@automerge/automerge"
-import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo"
+import * as AutomergeRepo from "@automerge/automerge-repo"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
@@ -10,6 +10,8 @@ import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 
+const Repo = AutomergeRepo.Repo;
+const isValidAutomergeUrl = AutomergeRepo.isValidAutomergeUrl;
 
 const CACHE_NAME = "v590"
 const FILES_TO_CACHE = [
@@ -23,8 +25,8 @@ const FILES_TO_CACHE = [
 	"index2.js.map",
 	"P2PSetup.js",
 	"P2PSetup.js.map",
-	"NetworkAdapter.js",
-	"NetworkAdapter.js.map",
+	"preload-helper.js",
+	"preload-helper.js.map",
 	"main.js",
 	"main.js.map",
 	"favicon.ico",
@@ -359,12 +361,28 @@ async function handleFetch(event) {
 	let urlPart = "/s/" + event.request.url.split("/s/")[1];
 	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
 	if (match) {
+		console.log("MATCH", match);
 		let documentId = match[1];
 		let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 		if (syncServer) await addSyncServer(`wss://${syncServer}`);
 		let docHandle = (await repo).find(`automerge:${documentId}`);
 		let doc = await docHandle.doc();
-		let importMap = doc && doc.meta && doc.meta.importMap ? JSON.stringify(doc.meta.importMap) : `{"imports": {}}`;
+		// To make it possible to import automerge and automerge-repo we need to add them to the importMap
+		// If a user imports them, we want to make sure they get the same instance as running in the client
+		let automergeExports = '';
+		for (let key in Automerge) {
+			automergeExports += `export const ${key} = Automerge.${key};\n`;
+		}
+		let automergeRepoExports = '';
+		for (let key in AutomergeRepo) {
+			automergeRepoExports += `export const ${key} = AutomergeRepo.${key};\n`;
+		}
+
+		let importMap = doc && doc.meta && doc.meta.importMap ? doc.meta.importMap : {imports:{}};
+		importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeExports);
+		importMap.imports["@automerge/automerge-repo"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeRepoExports);
+		importMap = JSON.stringify(importMap);
+
 		let caching = doc && doc.meta && doc.meta.caching ? doc.meta.caching : false;
 		if (caching) {
 			stratesWithCache.set(event.resultingClientId, docHandle.documentId);
