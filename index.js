@@ -3,7 +3,6 @@ import { next as Automerge } from "@automerge/automerge"
 import * as AutomergeRepo from "@automerge/automerge-repo"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
-import * as AutomergeRepoReactHooks from "@automerge/automerge-repo-react-hooks"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 await import("es-module-shims")
 
@@ -134,7 +133,6 @@ await installServiceWorker();
 const repo = await initializeRepo()
 _automerge.repo = repo;
 self.Automerge = Automerge;
-self.AutomergeRepoReactHooks = AutomergeRepoReactHooks;
 self.AutomergeRepo = AutomergeRepo;
 setupMessageChannel(repo);
 
