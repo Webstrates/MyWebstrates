@@ -13,7 +13,7 @@ import { md5 } from 'js-md5';
 const Repo = AutomergeRepo.Repo;
 const isValidAutomergeUrl = AutomergeRepo.isValidAutomergeUrl;
 
-const CACHE_NAME = "v590"
+const CACHE_NAME = "v595"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -361,7 +361,6 @@ async function handleFetch(event) {
 	let urlPart = "/s/" + event.request.url.split("/s/")[1];
 	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
 	if (match) {
-		console.log("MATCH", match);
 		let documentId = match[1];
 		let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 		if (syncServer) await addSyncServer(`wss://${syncServer}`);

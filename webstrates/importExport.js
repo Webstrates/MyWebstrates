@@ -1,5 +1,8 @@
 import { globalObject } from './globalObject.js';
-import {BlobWriter, ZipWriter, ZipReader, Uint8ArrayReader, Uint8ArrayWriter} from "@zip.js/zip.js";
+import {BlobWriter, ZipWriter, ZipReader, Uint8ArrayReader, Uint8ArrayWriter, TextWriter} from "@zip.js/zip.js";
+import * as parse5 from "parse5";
+import {jsonmlAdapter} from "./jsonml-adapter";
+import mime from "mime";
 
 Object.defineProperty(globalObject.publicObject, 'download', {
 	get: () => download,
@@ -12,6 +15,13 @@ Object.defineProperty(globalObject.publicObject, 'loadFromZip', {
 	set: () => { throw new Error('Internal loadFromZip method should not be modified'); },
 	enumerable: false
 });
+
+Object.defineProperty(globalObject.publicObject, 'importFromZip', {
+	get: () => importFromZip,
+	set: () => { throw new Error('Internal importFromZip method should not be modified'); },
+	enumerable: false
+});
+
 
 /**
  * Download the current strate and its assets as a zip file.
@@ -47,6 +57,10 @@ async function download() {
 	URL.revokeObjectURL(url);
 }
 
+/**
+ * Load a strate from a zip file consisting of binary automerge files
+ * @returns {Promise<void>}
+ */
 async function loadFromZip() {
 	const input = document.createElement('input');
 	input.setAttribute('type', 'file');
@@ -101,6 +115,75 @@ async function loadFromZip() {
 				window.open(`/s/${rootHandle.documentId}/`, '_blank');
 			}, 1000)
 		}
+		reader.readAsArrayBuffer(file);
+	});
+	input.click();
+}
+
+/**
+ * Import a strate from a zip file containing an index.html file and an optional _data.json and _meta.json
+ * As well as optional assets
+ * @returns {Promise<void>}
+ */
+async function importFromZip() {
+	const input = document.createElement('input');
+	input.setAttribute('type', 'file');
+	input.setAttribute('accept', '.zip');
+	input.addEventListener('change', async (event) => {
+		const file = input.files[0];
+		const reader = new FileReader();
+		reader.onload = async function (e) {
+			const arrayBuffer = e.target.result;
+			let jsonML;
+			let assets = [];
+			let data = {};
+			let meta = {federations: []};
+			const blobReader = new Uint8ArrayReader(new Uint8Array(arrayBuffer));
+			const zip = new ZipReader(blobReader);
+			let entries = await zip.getEntries();
+			entries.forEach(e => e.filename = e.filename.split('/').pop());
+			let indexHtmlEntry = entries.find(e => e.filename === "index.html");
+			if (indexHtmlEntry) {
+				// get text data from index.html
+				const textWriter = new TextWriter();
+				let html = await indexHtmlEntry.getData(textWriter);
+				jsonML = parse5.parse(html, { treeAdapter: jsonmlAdapter })[0];
+			}
+			for (let entry of entries) {
+				if (entry.filename === "_data.json") {
+					const textWriter = new TextWriter();
+					let jsonData = await entry.getData(textWriter);
+					data = JSON.parse(jsonData);
+				} else if (entry.filename === "_meta.json") {
+					const textWriter = new TextWriter();
+					let jsonMeta = await entry.getData(textWriter);
+					meta = JSON.parse(jsonMeta);
+				} else if (entry.filename !== "index.html") { // It's an asset
+					let blob = await entry.getData(new BlobWriter());
+					let binaryData = new Uint8Array(await blob.arrayBuffer());
+					let assetHandle = automerge.repo.create();
+					let mimeType = mime.getType(entry.filename);
+					await assetHandle.change(d => {
+						d.data = binaryData;
+						d.mimetype = mimeType;
+						d.fileName = entry.filename;
+					});
+					let assetId = assetHandle.documentId;
+					let asset = {id: assetId, fileName: entry.filename, mimeType: mimeType};
+					assets.push(asset);
+				}
+			}
+			let handle = automerge.repo.create()
+			await handle.change(d => {
+				d.assets = assets;
+				d.meta = meta;
+				d.data = data;
+				d.dom = jsonML;
+			});
+			let id = handle.documentId;
+			await new Promise(r => setTimeout(r, 1000));
+			window.open(`/s/${id}/`, '_blank');
+		};
 		reader.readAsArrayBuffer(file);
 	});
 	input.click();
