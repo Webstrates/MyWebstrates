@@ -1,11 +1,12 @@
 import { globalObject } from './globalObject.js';
-import {BlobWriter, ZipWriter, ZipReader, Uint8ArrayReader, Uint8ArrayWriter, TextWriter} from "@zip.js/zip.js";
+import {BlobWriter, BlobReader, ZipWriter, ZipReader, Uint8ArrayReader, Uint8ArrayWriter, TextWriter, TextReader} from "@zip.js/zip.js";
 import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./jsonml-adapter";
 import mime from "mime";
+import jsonmlTools from "jsonml-tools";
 
-Object.defineProperty(globalObject.publicObject, 'download', {
-	get: () => download,
+Object.defineProperty(globalObject.publicObject, 'saveToZip', {
+	get: () => saveToZip,
 	set: () => { throw new Error('Internal download method should not be modified'); },
 	enumerable: false
 });
@@ -22,13 +23,19 @@ Object.defineProperty(globalObject.publicObject, 'importFromZip', {
 	enumerable: false
 });
 
+Object.defineProperty(globalObject.publicObject, 'exportToZip', {
+	get: () => exportToZip,
+	set: () => { throw new Error('Internal export method should not be modified'); },
+	enumerable: false
+});
+
 
 /**
  * Download the current strate and its assets as a zip file.
  * Each document is stored as a separate binary file in the zip archive.
  * @returns {Promise<void>}
  */
-async function download() {
+async function saveToZip() {
 	let docs = [{id: `rootDoc-${automerge.handle.documentId}`, doc: await automerge.handle.doc()}];
 	for (let asset of webstrate.assets) {
 		const handle = await automerge.repo.find(`automerge:${asset.id}`);
@@ -47,6 +54,39 @@ async function download() {
 	const zipWriter = new ZipWriter(blobWriter);
 	for (let file of data) {
 		await zipWriter.add(file.id, new Uint8ArrayReader(file.doc));
+	}
+	const blob = await zipWriter.close();
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = `${automerge.handle.documentId}.zip`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Export the current strate and its assets as a zip file.
+ * data and meta is stored as json files.
+ * @returns {Promise<void>}
+ */
+async function exportToZip() {
+	let jsonML = automerge.doc.dom;
+	let html = jsonmlTools.toXML(jsonML, []);
+	html = html.replace(/ __wid="[^"]*"/g, "");
+	const blobWriter = new BlobWriter("application/zip");
+	const zipWriter = new ZipWriter(blobWriter);
+	await zipWriter.add("index.html", new TextReader(html));
+	if (automerge.doc.data) {
+		await zipWriter.add("data.json", new TextReader(JSON.stringify(automerge.doc.data)));
+	}
+	if (automerge.doc.meta) {
+		await zipWriter.add("meta.json", new TextReader(JSON.stringify(automerge.doc.meta)));
+	}
+	for (let asset of webstrate.assets) {
+		const handle = await automerge.repo.find(`automerge:${asset.id}`);
+		const assetDoc = await handle.doc();
+		let blob = new Blob([assetDoc.data], {type: assetDoc.mimetype});
+		await zipWriter.add(asset.fileName, new BlobReader(blob));
 	}
 	const blob = await zipWriter.close();
 	const url = URL.createObjectURL(blob);
@@ -150,11 +190,11 @@ async function importFromZip() {
 				jsonML = parse5.parse(html, { treeAdapter: jsonmlAdapter })[0];
 			}
 			for (let entry of entries) {
-				if (entry.filename === "_data.json") {
+				if (entry.filename === "data.json") {
 					const textWriter = new TextWriter();
 					let jsonData = await entry.getData(textWriter);
 					data = JSON.parse(jsonData);
-				} else if (entry.filename === "_meta.json") {
+				} else if (entry.filename === "meta.json") {
 					const textWriter = new TextWriter();
 					let jsonMeta = await entry.getData(textWriter);
 					meta = JSON.parse(jsonMeta);

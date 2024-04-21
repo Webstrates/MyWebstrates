@@ -28,6 +28,7 @@
 		"es-module-shims": "^1.8.0",
 		"html5-qrcode": "^2.3.8",
 		"js-md5": "^0.8.3",
+		"jsonml-tools": "http://github.com/Webstrates/jsonml-tools.git",
 		"mime": "^4.0.1",
 		"parse5": "^7.1.2",
 		"setimmediate": "^1.0.5",
