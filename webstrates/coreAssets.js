@@ -43,6 +43,31 @@ function getAssets() {
 }
 
 /**
+ * Adds an asset to the document from a File Object
+ * @param file
+ * @returns {Promise<void>}
+ */
+globalObject.publicObject.addAssetFromFile = async (file) => {
+	let reader = new FileReader();
+	reader.onload = async function (e) {
+		let arrayBuffer = e.target.result;
+		let assetHandle = (await automerge.repo).create()
+		await assetHandle.change(d => {
+			d.data = new Uint8Array(arrayBuffer);
+			d.mimeType = file.type;
+			d.fileName = file.name;
+			d.v = 0;
+		});
+		automerge.handle.change(d => {
+			d.assets.push({fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId});
+		});
+		window.assetHandles.push(assetHandle);
+		let doc = await assetHandle.doc();
+	}
+	reader.readAsArrayBuffer(file);
+}
+
+/**
  * Makes it possible to select and upload files.
  * @param  {Function} callback Callback with two arguments, error and response. First argument will
  *                             be null on success.
@@ -55,7 +80,7 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 		input.setAttribute('multiple', true);
 		input.setAttribute('type', 'file');
 
-		input.addEventListener('change', event => {
+		input.addEventListener('change', async (event) => {
 			const formData = new FormData();
 			Object.entries(options).forEach(([key, value]) => formData.append(key, value));
 			for (let i=0; i < input.files.length; i++) {
@@ -63,23 +88,7 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 			}
 			let files = formData.getAll("file[]");
 			for (let file of files) {
-				let reader = new FileReader();
-				reader.onload = async function (e) {
-					let arrayBuffer = e.target.result;
-					let assetHandle = (await automerge.repo).create()
-					await assetHandle.change(d => {
-						d.data = new Uint8Array(arrayBuffer);
-						d.mimeType = file.type;
-						d.fileName = file.name;
-						d.v = 0;
-					});
-					automerge.handle.change(d => {
-						d.assets.push({fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId});
-					});
-					window.assetHandles.push(assetHandle);
-					let doc = await assetHandle.doc();
-				}
-				reader.readAsArrayBuffer(file);
+				await globalObject.publicObject.addAssetFromFile(file);
 			}
 		});
 

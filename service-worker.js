@@ -13,7 +13,7 @@ import { md5 } from 'js-md5';
 const Repo = AutomergeRepo.Repo;
 const isValidAutomergeUrl = AutomergeRepo.isValidAutomergeUrl;
 
-const CACHE_NAME = "v608"
+const CACHE_NAME = "v610"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
