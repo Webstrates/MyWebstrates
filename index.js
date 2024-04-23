@@ -1,12 +1,12 @@
 import * as AutomergeWasm from "@automerge/automerge-wasm"
-import { next as Automerge } from "@automerge/automerge"
-import * as AutomergeRepo from "@automerge/automerge-repo"
+import * as AutomergeCore from "@automerge/automerge"
+import * as Automerge from "@automerge/automerge-repo"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 await import("es-module-shims")
 
-const Repo = AutomergeRepo.Repo;
+const Repo = Automerge.Repo;
 const documentProxyObj = {};
 const documentProxy = new Proxy(document, documentProxyObj);
 window.documentProxy = documentProxy;
@@ -133,7 +133,7 @@ await installServiceWorker();
 const repo = await initializeRepo()
 _automerge.repo = repo;
 self.Automerge = Automerge;
-self.AutomergeRepo = AutomergeRepo;
+self.AutomergeCore = AutomergeCore;
 setupMessageChannel(repo);
 
 let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');

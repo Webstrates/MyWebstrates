@@ -1,6 +1,6 @@
 import * as AutomergeWasm from "@automerge/automerge-wasm"
-import * as Automerge from "@automerge/automerge"
-import * as AutomergeRepo from "@automerge/automerge-repo"
+import * as Automerge from "@automerge/automerge-repo"
+import * as AutomergeCore from "@automerge/automerge"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
@@ -10,10 +10,9 @@ import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 
-const Repo = AutomergeRepo.Repo;
-const isValidAutomergeUrl = AutomergeRepo.isValidAutomergeUrl;
+const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v610"
+const CACHE_NAME = "v611"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -46,7 +45,6 @@ async function initializeRepo() {
 	})
 
 	await AutomergeWasm.promise
-	Automerge.use(AutomergeWasm)
 
 	return repo
 }
@@ -368,17 +366,17 @@ async function handleFetch(event) {
 		let doc = await docHandle.doc();
 		// To make it possible to import automerge and automerge-repo we need to add them to the importMap
 		// If a user imports them, we want to make sure they get the same instance as running in the client
-		let automergeExports = '';
-		for (let key in Automerge) {
-			automergeExports += `export const ${key} = Automerge.${key};\n`;
-		}
 		let automergeRepoExports = '';
-		for (let key in AutomergeRepo) {
-			automergeRepoExports += `export const ${key} = AutomergeRepo.${key};\n`;
+		for (let key in Automerge) {
+			automergeRepoExports += `export const ${key} = Automerge.${key};\n`;
+		}
+		let automergeCoreExports = '';
+		for (let key in AutomergeCore) {
+			automergeCoreExports += `export const ${key} = AutomergeCore.${key};\n`;
 		}
 
 		let importMap = doc && doc.meta && doc.meta.importMap ? doc.meta.importMap : {imports:{}};
-		importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeExports);
+		importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeCoreExports);
 		importMap.imports["@automerge/automerge-repo"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeRepoExports);
 		importMap = JSON.stringify(importMap);
 
