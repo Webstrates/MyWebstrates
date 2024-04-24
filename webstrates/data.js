@@ -17,10 +17,15 @@ Object.defineProperty(globalObject.publicObject, 'updateData', {
 
 coreEvents.addEventListener('webstrateObjectsAdded', (nodeTree) => {
 	globalObject.createEvent('dataChanged');
+	globalObject.createEvent('dataChangedWithPatchSet');
 }, coreEvents.PRIORITY.IMMEDIATE);
 
 coreEvents.addEventListener('dataUpdated', (patch) => {
 	globalObject.triggerEvent('dataChanged', patch);
+});
+
+coreEvents.addEventListener('dataUpdatedWithPatchSet', (patches) => {
+	globalObject.triggerEvent('dataChangedWithPatchSet', patches);
 });
 
 

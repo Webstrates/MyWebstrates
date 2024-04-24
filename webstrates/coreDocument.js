@@ -16,6 +16,7 @@ coreEvents.createEvent('receivedOps');
 coreEvents.createEvent('assetAdded');
 coreEvents.createEvent('assetDeleted');
 coreEvents.createEvent('dataUpdated');
+coreEvents.createEvent('dataUpdatedWithPatchSet');
 
 coreDocumentModule.subscribeToOps = function() {
 	coreEvents.addEventListener('createdOps', (ops) => {
@@ -41,6 +42,7 @@ coreDocumentModule.handlePatches = function(patches) {
 function processPatches(patches) {
 	patches = coreUtils.consolidateAutomergePatches(patches);
 	let assetPatch;
+	let sawDataPatch = false;
 	for (let patch of patches) {
 		let path = patch.path;
 		let first = path.shift();
@@ -65,6 +67,10 @@ function processPatches(patches) {
 				}
 				break;
 			case 'data':
+				if (!sawDataPatch) {
+					coreEvents.triggerEvent('dataUpdatedWithPatchSet', structuredClone(patches))
+					sawDataPatch = true;
+				}
 				coreEvents.triggerEvent('dataUpdated', patch);
 				break;
 		}
