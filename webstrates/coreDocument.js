@@ -51,7 +51,7 @@ function processPatches(patches) {
 			patch.path.shift();
 			return patch;
 		});
-		coreEvents.triggerEvent('dataUpdatedWithPatchSet', dataPatches)
+		coreEvents.triggerEvent('dataUpdatedWithPatchSet', {local: window.doingLocalDataChanges, patches: dataPatches})
 	}
 	for (let patch of patches) {
 		let path = patch.path;
@@ -77,7 +77,7 @@ function processPatches(patches) {
 				}
 				break;
 			case 'data':
-				coreEvents.triggerEvent('dataUpdated', patch);
+				coreEvents.triggerEvent('dataUpdated', {local: window.doingLocalDataChanges, patch: patch});
 				break;
 		}
 	}
