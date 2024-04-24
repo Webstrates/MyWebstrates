@@ -42,7 +42,17 @@ coreDocumentModule.handlePatches = function(patches) {
 function processPatches(patches) {
 	patches = coreUtils.consolidateAutomergePatches(patches);
 	let assetPatch;
-	let sawDataPatch = false;
+	let hasDataPatch = false;
+	for (let patch of patches) {
+		if (patch.path[0] === 'data') hasDataPatch = true;
+	}
+	if (hasDataPatch) {
+		let dataPatches = structuredClone(patches).filter(patch => patch.path[0] === 'data').map(patch => {
+			patch.path.shift();
+			return patch;
+		});
+		coreEvents.triggerEvent('dataUpdatedWithPatchSet', dataPatches)
+	}
 	for (let patch of patches) {
 		let path = patch.path;
 		let first = path.shift();
@@ -67,10 +77,6 @@ function processPatches(patches) {
 				}
 				break;
 			case 'data':
-				if (!sawDataPatch) {
-					coreEvents.triggerEvent('dataUpdatedWithPatchSet', structuredClone(patches))
-					sawDataPatch = true;
-				}
 				coreEvents.triggerEvent('dataUpdated', patch);
 				break;
 		}
