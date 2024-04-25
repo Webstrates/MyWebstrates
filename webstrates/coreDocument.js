@@ -18,6 +18,8 @@ coreEvents.createEvent('assetDeleted');
 coreEvents.createEvent('dataUpdated');
 coreEvents.createEvent('dataUpdatedWithPatchSet');
 
+coreDocumentModule.localDataUpdates = false;
+
 coreDocumentModule.subscribeToOps = function() {
 	coreEvents.addEventListener('createdOps', (ops) => {
 		window.suppressChanges = true;
@@ -51,7 +53,7 @@ function processPatches(patches) {
 			patch.path.shift();
 			return patch;
 		});
-		coreEvents.triggerEvent('dataUpdatedWithPatchSet', {local: window.doingLocalDataChanges, patches: dataPatches})
+		coreEvents.triggerEvent('dataUpdatedWithPatchSet', {local: coreDocumentModule.localDataUpdates, patches: dataPatches})
 	}
 	for (let patch of patches) {
 		let path = patch.path;
@@ -77,7 +79,7 @@ function processPatches(patches) {
 				}
 				break;
 			case 'data':
-				coreEvents.triggerEvent('dataUpdated', {local: window.doingLocalDataChanges, patch: patch});
+				coreEvents.triggerEvent('dataUpdated', {local: coreDocumentModule.localDataUpdates, patch: patch});
 				break;
 		}
 	}

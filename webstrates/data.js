@@ -1,14 +1,13 @@
 import { globalObject } from './globalObject.js';
 import { coreEvents } from './coreEvents.js';
-
-window.doingLocalDataChanges = false;
+import { coreDocument } from "./coreDocument";
 
 let updateData = (changeFunc) => {
-	window.doingLocalDataChanges = true;
+	coreDocument.localDataUpdates = true;
 	automerge.handle.change((doc => {
 		changeFunc(doc.data);
 	}));
-	window.doingLocalDataChanges = false;
+	coreDocument.localDataUpdates = false;
 }
 
 Object.defineProperty(globalObject.publicObject, 'updateData', {
