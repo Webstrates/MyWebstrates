@@ -12,7 +12,7 @@ import { md5 } from 'js-md5';
 
 const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v625"
+const CACHE_NAME = "v626"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -126,19 +126,19 @@ self.addEventListener("activate", async (event) => {
  * @returns {Promise<(DocHandle<unknown>|Response)[]>}
  */
 const createDataDoc = async function(request) {
-	let clonedRequest = request.clone()
+	let clonedRequest = request.clone();
 	let response;
 	try {
 		response = await fetch(clonedRequest);
 	} catch (e) {
 		console.warn(`Could not cache ${request.url}.`)
-		return [null, response]
+		return null;
 	}
 	try {
 		if (response.type === 'opaque')	response = await fetch(clonedRequest.url);
 	} catch (e) {
 		console.warn(`Could not cache ${request.url}.`)
-		return [null, response]
+		return null;
 	}
 	let responseClone = response.clone()
 	let headers = {};
@@ -152,9 +152,9 @@ const createDataDoc = async function(request) {
 	let knownAlready = await getDocId(checksum);
 	let handle;
 	if (knownAlready) {
-		handle = (await repo).find(knownAlready);
+		handle = await (await repo).find(knownAlready);
 	} else {
-		handle = (await repo).create();
+		handle = await (await repo).create();
 		await handle.change(d => {
 			d.data = data;
 			d.url = request.url;
@@ -163,64 +163,68 @@ const createDataDoc = async function(request) {
 		});
 		await storeDocId(checksum, handle.documentId);
 	}
-	return [handle, response];
+	return handle;
 }
 
 self.addEventListener("fetch",  async (event) => {
 	// First we will check if it is a remote URL that is being fetched.
-	if (self.location.origin !== (new URL(event.request.url)).origin)
-	{
-		// We now check if the webstrate has caching enabled
-		let strateWithCaching = stratesWithCache.get(event.clientId);
-		if (strateWithCaching) {
-			// If it does, we fetch the strate document
-			let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
-			let doc = await docHandle.doc()
-			if (doc && !doc.cache) {
-				// If a cache hasn't been built yet, we will create one with the first URL that's being requested
-				let [dataDocHandle, newResponse] = await createDataDoc(event.request)
-				if (dataDocHandle) {
-					let cache = {};
-					cache[event.request.url] = dataDocHandle.documentId;
-					await docHandle.change(d => d.cache = cache);
-				}
-				return newResponse;
-			} else if (doc && doc.cache && !doc.cache[event.request.url]) {
-				// if the cache exists, but the file hasn't been cached, we cache it
-				let [dataDocHandle, newResponse] = await createDataDoc(event.request);
-				if (dataDocHandle) {
-					await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
-				}
-				return newResponse;
-			} else if (doc && doc.cache && doc.cache[event.request.url]) {
-				// If the file is cached we fetch it
-				let dataDocId = 	doc.cache[event.request.url];
-				let dataDocHandle = await (await repo).find(`automerge:${dataDocId}`);
-				let dataDoc = await dataDocHandle.doc();
-				const arrayBuffer = dataDoc.data;
-				let headers = new Headers();
-				for (let header in dataDoc.headers) {
-					headers.set(header, dataDoc.headers[header]);
-				}
-				event.respondWith((async () => {
-					return new Response(arrayBuffer, {headers: headers})
-				})());
-				return;
-			}
-		}
-		return;
-	}
-	if (!(event.request.url.match("/new")
+	if (self.location.origin !== (new URL(event.request.url)).origin) {
+		let result = await handleRemoteFetch(event);
+		if (result) event.respondWith(result);
+	} else if (!(event.request.url.match("/new")
 		|| event.request.url.match("/s/(.+)/((.+)\.(.+))")
 		|| event.request.url.match("/s/(.+)/?$")
 		|| event.request.url.match("/s/([a-zA-Z0-9]+)/?(.+)?")
 		|| event.request.url.match("/p2p")
-		|| event.request.url.match(`(${FILES_TO_CACHE.join('|')})$`))) return;
-	let result = handleFetch(event);
-	if (result) event.respondWith(result);
+		|| event.request.url.match(`(${FILES_TO_CACHE.join('|')})$`))) {
+		return;
+	} else {
+		let result = handleLocalFetch(event);
+		if (result) event.respondWith(result);
+	}
 });
 
-async function handleFetch(event) {
+async function handleRemoteFetch(event) {
+	// We now check if the webstrate has caching enabled
+	let strateWithCaching = stratesWithCache.get(event.clientId);
+	if (strateWithCaching) {
+		// If it does, we fetch the strate document
+		let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
+		let doc = await docHandle.doc()
+		if (doc && !doc.cache) {
+			console.log("Cache has not been built yet")
+			// If a cache hasn't been built yet, we will create one with the first URL that's being requested
+			let dataDocHandle = await createDataDoc(event.request)
+			if (dataDocHandle) {
+				let cache = {};
+				cache[event.request.url] = dataDocHandle.documentId;
+				await docHandle.change(d => d.cache = cache);
+			}
+			//return newResponse;
+		} else if (doc && doc.cache && !doc.cache[event.request.url]) {
+			console.log("Cache is there, but the following URL has not been cached before", event.request.url);
+			// if the cache exists, but the file hasn't been cached, we cache it
+			let dataDocHandle = await createDataDoc(event.request);
+			if (dataDocHandle) {
+				await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
+			}
+		}
+		doc = await docHandle.doc();
+		let dataDocId = doc.cache[event.request.url];
+		let dataDocHandle = await (await repo).find(`automerge:${dataDocId}`);
+		let dataDoc = await dataDocHandle.doc();
+		const arrayBuffer = dataDoc.data;
+		let headers = new Headers();
+		for (let header in dataDoc.headers) {
+			headers.set(header, dataDoc.headers[header]);
+		}
+
+		return new Response(arrayBuffer, {headers: headers})
+	}
+	return;
+}
+
+async function handleLocalFetch(event) {
 	const responseFromCache = await caches.match(event.request);
 	if (responseFromCache) return responseFromCache;
 	let p2pMatch = event.request.url.match(/\/p2p/);
