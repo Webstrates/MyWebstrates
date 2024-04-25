@@ -192,7 +192,6 @@ async function handleRemoteFetch(event) {
 		let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
 		let doc = await docHandle.doc()
 		if (doc && !doc.cache) {
-			console.log("Cache has not been built yet")
 			// If a cache hasn't been built yet, we will create one with the first URL that's being requested
 			let dataDocHandle = await createDataDoc(event.request)
 			if (dataDocHandle) {
@@ -202,7 +201,6 @@ async function handleRemoteFetch(event) {
 			}
 			//return newResponse;
 		} else if (doc && doc.cache && !doc.cache[event.request.url]) {
-			console.log("Cache is there, but the following URL has not been cached before", event.request.url);
 			// if the cache exists, but the file hasn't been cached, we cache it
 			let dataDocHandle = await createDataDoc(event.request);
 			if (dataDocHandle) {
