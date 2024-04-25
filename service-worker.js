@@ -166,11 +166,12 @@ const createDataDoc = async function(request) {
 	return handle;
 }
 
-self.addEventListener("fetch",  async (event) => {
+self.addEventListener("fetch", (event) => {
 	// First we will check if it is a remote URL that is being fetched.
 	if (self.location.origin !== (new URL(event.request.url)).origin) {
-		let result = await handleRemoteFetch(event);
-		if (result) event.respondWith(result);
+		let fetchPromise = handleRemoteFetch(event);
+		if (!fetchPromise) return;
+		event.respondWith(fetchPromise);
 	} else if (!(event.request.url.match("/new")
 		|| event.request.url.match("/s/(.+)/((.+)\.(.+))")
 		|| event.request.url.match("/s/(.+)/?$")
@@ -179,15 +180,15 @@ self.addEventListener("fetch",  async (event) => {
 		|| event.request.url.match(`(${FILES_TO_CACHE.join('|')})$`))) {
 		return;
 	} else {
-		let result = handleLocalFetch(event);
-		if (result) event.respondWith(result);
+		event.respondWith(handleLocalFetch(event));
 	}
 });
 
-async function handleRemoteFetch(event) {
+function handleRemoteFetch(event) {
 	// We now check if the webstrate has caching enabled
 	let strateWithCaching = stratesWithCache.get(event.clientId);
 	if (strateWithCaching) {
+	    let cacheDoc = async ()=>{
 		// If it does, we fetch the strate document
 		let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
 		let doc = await docHandle.doc()
@@ -217,7 +218,9 @@ async function handleRemoteFetch(event) {
 			headers.set(header, dataDoc.headers[header]);
 		}
 
-		return new Response(arrayBuffer, {headers: headers})
+		return new Response(arrayBuffer, {headers: headers});
+	    };
+	    return cacheDoc();
 	}
 	return;
 }
