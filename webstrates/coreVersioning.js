@@ -101,11 +101,13 @@ versioningModule.copy = async (handle, repo, options = {local: false, version: u
  * The version can either be a number or a version hash.
  */
 Object.defineProperty(globalObject.publicObject, 'copy', {
-		value: async (options = {local: false, version: undefined}) => {
+		value: async (options = {local: false, version: undefined, openInNewTab: true}) => {
 			let newDocHandle = await versioningModule.copy(automerge.handle, automerge.repo, options);
-			setTimeout(() => {
+			if (options.openInNewTab) {
+				await new Promise(r => setTimeout(r, 500));
 				window.open(`/s/${newDocHandle.documentId}/`, '_blank');
-			}, 500);
+			}
+			return newDocHandle;
 		}
 });
 
@@ -125,11 +127,13 @@ versioningModule.clone = async (handle, repo) => {
  * Opens the cloned strate in a new tab
  */
 Object.defineProperty(globalObject.publicObject, 'clone', {
-	value: async () => {
-		let clonedDocHandle = await versioningModule.clone(automerge.handle, repo);
-		setTimeout(() => {
+	value: async (options = {openInNewTab: true}) => {
+		let clonedDocHandle = await versioningModule.clone(automerge.handle, automerge.repo);
+		if (options.openInNewTab) {
+			await new Promise(r => setTimeout(r, 500));
 			window.open(`/s/${clonedDocHandle.documentId}/`, '_blank');
-		}, 500);
+		}
+		return clonedDocHandle;
 	}
 });
 
