@@ -58,7 +58,6 @@ function remove(url) {
 function enable() {
 	automerge.handle.change(d => {
 		d.meta.caching = true
-		console.log("ENABLING", !d.cache)
 		if (!d.cache)	d.cache = {};
 	});
 }
