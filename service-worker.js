@@ -120,52 +120,6 @@ self.addEventListener("activate", async (event) => {
 	clients.claim()
 })
 
-/**
- * This function takes a request stores the response data and headers in an automerge doc
- * @param request
- * @returns {Promise<(DocHandle<unknown>|Response)[]>}
- */
-const createDataDoc = async function(request) {
-	let clonedRequest = request.clone();
-	let response;
-	try {
-		response = await fetch(clonedRequest);
-	} catch (e) {
-		console.warn(`Could not cache ${request.url}.`)
-		return null;
-	}
-	try {
-		if (response.type === 'opaque')	response = await fetch(clonedRequest.url);
-	} catch (e) {
-		console.warn(`Could not cache ${request.url}.`)
-		return null;
-	}
-	let responseClone = response.clone()
-	let headers = {};
-	for (let [key, value] of responseClone.headers.entries()) {
-		headers[key] = value;
-	}
-	let data = new Uint8Array(await responseClone.arrayBuffer());
-	// We compute the checksum to see if we've seen this file before
-	// The checksum -> docid pair is stored in indexeddb
-	let checksum = md5(data);
-	let knownAlready = await getDocId(checksum);
-	let handle;
-	if (knownAlready) {
-		handle = await (await repo).find(knownAlready);
-	} else {
-		handle = await (await repo).create();
-		await handle.change(d => {
-			d.data = data;
-			d.url = request.url;
-			d.headers = headers;
-			d.ts = Date.now();
-		});
-		await storeDocId(checksum, handle.documentId);
-	}
-	return handle;
-}
-
 self.addEventListener("fetch", (event) => {
 	// First we will check if it is a remote URL that is being fetched.
 	if (self.location.origin !== (new URL(event.request.url)).origin) {
@@ -229,12 +183,23 @@ async function handleLocalFetch(event) {
 	const responseFromCache = await caches.match(event.request);
 	if (responseFromCache) return responseFromCache;
 	let p2pMatch = event.request.url.match(/\/p2p/);
-	if (p2pMatch) {
-		// Respond with the file P2PSetup.html
-		let response = await fetch("p2p/P2PSetup.html");
-		return response;
-	}
+	if (p2pMatch) return await handleP2PMatch();
 	let newMatch = event.request.url.match(/(\/new)((\?prototypeUrl=)(.+))?/);
+	if (newMatch) return await handleNewMatch(event, newMatch);
+	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
+	if (assetMatch && !(assetMatch[2] && assetMatch[2].startsWith('?'))) return await handleAssetMatch(event, assetMatch);
+	let urlPart = "/s/" + event.request.url.split("/s/")[1];
+	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
+	if (match) return await handleStrateMatch(event, match);
+}
+
+async function handleP2PMatch() {
+	// Respond with the file P2PSetup.html
+	let response = await fetch("p2p/P2PSetup.html");
+	return response;
+}
+
+async function handleNewMatch(event, newMatch) {
 	let jsonML;
 	let assets = [];
 	if (newMatch) {
@@ -282,114 +247,113 @@ async function handleLocalFetch(event) {
 		await new Promise(r => setTimeout(r, 500));
 		return Response.redirect(`/s/${id}/`);
 	}
+}
 
-	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
-	if (assetMatch && !(assetMatch[2] && assetMatch[2].startsWith('?'))) {
-		let docId = assetMatch[1].split("@")[0];
-		let filename = assetMatch[2];
-		// Check if it is a zip file
-		let path = filename.split('/');
-		let isZip = false;
-		let isZipDir = false;
-		let zipPath;
-		if (path[0].endsWith(".zip?dir") || (path[1] && path[1].endsWith("?dir"))) {
-			isZip = true;
-			isZipDir = true;
-			filename = path[0].split('?')[0];
-		} else if (path.length > 1 && path[0].endsWith(".zip")) {
-			isZip = true;
-			filename = path[0];
-			zipPath = path.slice(1).join('/');
-		}
+async function handleAssetMatch(event, assetMatch) {
+	let docId = assetMatch[1].split("@")[0];
+	let filename = assetMatch[2];
+	// Check if it is a zip file
+	let path = filename.split('/');
+	let isZip = false;
+	let isZipDir = false;
+	let zipPath;
+	if (path[0].endsWith(".zip?dir") || (path[1] && path[1].endsWith("?dir"))) {
+		isZip = true;
+		isZipDir = true;
+		filename = path[0].split('?')[0];
+	} else if (path.length > 1 && path[0].endsWith(".zip")) {
+		isZip = true;
+		filename = path[0];
+		zipPath = path.slice(1).join('/');
+	}
 
-		let handle = (await repo).find(`automerge:${docId}`);
-		let doc = await handle.doc();
-		let assetId;
-		for (let asset of doc.assets) {
-			if (asset.fileName === filename) {
-				assetId = asset.id;
-			}
-		}
-		if (assetId) {
-			let assetHandle = (await repo).find(`automerge:${assetId}`);
-			let assetDoc = await assetHandle.doc();
-			const uint8Array = assetDoc.data;
-			if (isZip && isZipDir) {
-				let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
-				let blobReader = new BlobReader(blob);
-				let zip = new ZipReader(blobReader);
-				let entries = await zip.getEntries();
-				let result = entries.map(e => e.filename);
-				let json = JSON.stringify(result);
-				return new Response(json,{
-					status: 200,
-					statusText: 'OK',
-					headers: {
-						'Content-Type': 'application/json'
-					}
-				})
-			}
-			if (isZip) {
-				let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
-				let blobReader = new BlobReader(blob);
-				let zip = new ZipReader(blobReader);
-				let blobWriter = new BlobWriter();
-				let entries = await zip.getEntries();
-				let entry = entries.find(e => e.filename === zipPath);
-				if (entry) {
-					const blob = await entry.getData(blobWriter);
-					return new Response(blob,{
-						status: 200,
-						statusText: 'OK'
-					})
-				} else {
-					return new Response("No such asset", {
-						status: 404,
-						statusText: 'No such asset'
-					});
-				}
-			}
-			const blob = new Blob([uint8Array], { type: assetDoc.mimeType });
-			return new Response(blob,{
-				status: 200,
-				statusText: 'OK'
-			})
-		} else {
-			return new Response("No such asset", {
-				status: 404,
-				statusText: 'No such asset'
-			});
+	let handle = (await repo).find(`automerge:${docId}`);
+	let doc = await handle.doc();
+	let assetId;
+	for (let asset of doc.assets) {
+		if (asset.fileName === filename) {
+			assetId = asset.id;
 		}
 	}
-	let urlPart = "/s/" + event.request.url.split("/s/")[1];
-	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
-	if (match) {
-		let documentId = match[1];
-		let syncServer = match[2] ? match[2].split('/')[0] : undefined;
-		if (syncServer) await addSyncServer(`wss://${syncServer}`);
-		let docHandle = (await repo).find(`automerge:${documentId}`);
-		let doc = await docHandle.doc();
-		// To make it possible to import automerge and automerge-repo we need to add them to the importMap
-		// If a user imports them, we want to make sure they get the same instance as running in the client
-		let automergeRepoExports = '';
-		for (let key in Automerge) {
-			automergeRepoExports += `export const ${key} = Automerge.${key};\n`;
+	if (assetId) {
+		let assetHandle = (await repo).find(`automerge:${assetId}`);
+		let assetDoc = await assetHandle.doc();
+		const uint8Array = assetDoc.data;
+		if (isZip && isZipDir) {
+			let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
+			let blobReader = new BlobReader(blob);
+			let zip = new ZipReader(blobReader);
+			let entries = await zip.getEntries();
+			let result = entries.map(e => e.filename);
+			let json = JSON.stringify(result);
+			return new Response(json,{
+				status: 200,
+				statusText: 'OK',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			})
 		}
-		let automergeCoreExports = '';
-		for (let key in AutomergeCore) {
-			automergeCoreExports += `export const ${key} = AutomergeCore.${key};\n`;
+		if (isZip) {
+			let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
+			let blobReader = new BlobReader(blob);
+			let zip = new ZipReader(blobReader);
+			let blobWriter = new BlobWriter();
+			let entries = await zip.getEntries();
+			let entry = entries.find(e => e.filename === zipPath);
+			if (entry) {
+				const blob = await entry.getData(blobWriter);
+				return new Response(blob,{
+					status: 200,
+					statusText: 'OK'
+				})
+			} else {
+				return new Response("No such asset", {
+					status: 404,
+					statusText: 'No such asset'
+				});
+			}
 		}
+		const blob = new Blob([uint8Array], { type: assetDoc.mimeType });
+		return new Response(blob,{
+			status: 200,
+			statusText: 'OK'
+		})
+	} else {
+		return new Response("No such asset", {
+			status: 404,
+			statusText: 'No such asset'
+		});
+	}
+}
 
-		let importMap = doc && doc.meta && doc.meta.importMap ? doc.meta.importMap : {imports:{}};
-		importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeCoreExports);
-		importMap.imports["@automerge/automerge-repo"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeRepoExports);
-		importMap = JSON.stringify(importMap);
+async function handleStrateMatch(event, match) {
+	let documentId = match[1];
+	let syncServer = match[2] ? match[2].split('/')[0] : undefined;
+	if (syncServer) await addSyncServer(`wss://${syncServer}`);
+	let docHandle = (await repo).find(`automerge:${documentId}`);
+	let doc = await docHandle.doc();
+	// To make it possible to import automerge and automerge-repo we need to add them to the importMap
+	// If a user imports them, we want to make sure they get the same instance as running in the client
+	let automergeRepoExports = '';
+	for (let key in Automerge) {
+		automergeRepoExports += `export const ${key} = Automerge.${key};\n`;
+	}
+	let automergeCoreExports = '';
+	for (let key in AutomergeCore) {
+		automergeCoreExports += `export const ${key} = AutomergeCore.${key};\n`;
+	}
 
-		let caching = doc && doc.meta && doc.meta.caching ? doc.meta.caching : false;
-		if (caching) {
-			stratesWithCache.set(event.resultingClientId, docHandle.documentId);
-		}
-		return new Response(`<!DOCTYPE html>
+	let importMap = doc && doc.meta && doc.meta.importMap ? doc.meta.importMap : {imports:{}};
+	importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeCoreExports);
+	importMap.imports["@automerge/automerge-repo"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeRepoExports);
+	importMap = JSON.stringify(importMap);
+
+	let caching = doc && doc.meta && doc.meta.caching ? doc.meta.caching : false;
+	if (caching) {
+		stratesWithCache.set(event.resultingClientId, docHandle.documentId);
+	}
+	return new Response(`<!DOCTYPE html>
 	<html>
 	<head>
 		<script type="importmap">${importMap}</script>
@@ -401,13 +365,58 @@ async function handleLocalFetch(event) {
 	<body>
 	</body>
 	</html>`, {
-			status: 200,
-			statusText: 'OK',
-			headers: {
-				'Content-Type': 'text/html'
-			}
-		});
+		status: 200,
+		statusText: 'OK',
+		headers: {
+			'Content-Type': 'text/html'
+		}
+	});
+}
+
+/**
+ * This function takes a request stores the response data and headers in an automerge doc
+ * @param request
+ * @returns {Promise<(DocHandle<unknown>|Response)[]>}
+ */
+async function createDataDoc(request) {
+	let clonedRequest = request.clone();
+	let response;
+	try {
+		response = await fetch(clonedRequest);
+	} catch (e) {
+		console.warn(`Could not cache ${request.url}.`)
+		return null;
 	}
+	try {
+		if (response.type === 'opaque')	response = await fetch(clonedRequest.url);
+	} catch (e) {
+		console.warn(`Could not cache ${request.url}.`)
+		return null;
+	}
+	let responseClone = response.clone()
+	let headers = {};
+	for (let [key, value] of responseClone.headers.entries()) {
+		headers[key] = value;
+	}
+	let data = new Uint8Array(await responseClone.arrayBuffer());
+	// We compute the checksum to see if we've seen this file before
+	// The checksum -> docid pair is stored in indexeddb
+	let checksum = md5(data);
+	let knownAlready = await getDocId(checksum);
+	let handle;
+	if (knownAlready) {
+		handle = await (await repo).find(knownAlready);
+	} else {
+		handle = await (await repo).create();
+		await handle.change(d => {
+			d.data = data;
+			d.url = request.url;
+			d.headers = headers;
+			d.ts = Date.now();
+		});
+		await storeDocId(checksum, handle.documentId);
+	}
+	return handle;
 }
 
 function generateDOM(name) {
