@@ -30,7 +30,8 @@ const FILES_TO_CACHE = [
 	"main.js.map",
 	"favicon.ico",
 	"local-first.png",
-	"mywebstrates.png"
+	"mywebstrates.png",
+	"p2p/P2PSetup.html"
 ];
 
 const stratesWithCache = new Map();
@@ -194,9 +195,9 @@ async function handleLocalFetch(event) {
 }
 
 async function handleP2PMatch() {
-	// Respond with the file P2PSetup.html
-	let response = await fetch("p2p/P2PSetup.html");
-	return response;
+	const cacheStorage = await caches.open(CACHE_NAME);
+	const cachedResponse = await cacheStorage.match("p2p/P2PSetup.html");
+	return cachedResponse;
 }
 
 async function handleNewMatch(event, newMatch) {
