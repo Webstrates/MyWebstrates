@@ -42,6 +42,15 @@ Object.defineProperty(publicObject, 'cached', {
 	enumerable: false
 });
 
+Object.defineProperty(publicObject, 'enabled', {
+	get: () => automerge.doc.meta.caching ? true : false,
+	set: () => { throw new Error('Internal enabled method should not be modified'); },
+	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
+	// due to the circular reference.
+	enumerable: false
+});
+
+
 Object.defineProperty(publicObject, 'remove', {
 	get: () => remove,
 	set: () => { throw new Error('Internal remove method should not be modified'); },
