@@ -514,7 +514,7 @@ coreUtilsModule.consolidateAutomergePatches = (patches) => {
 	for (let i=patches.length-1; i>=0; i--) {
 		let patch = patches[i];
 		// When we scan forward, we might run into del or inserts so we will need to modify the search path
-		let searchPath = structuredClone(patch.path);
+		let searchPath = Array.from(patch.path);
 		// We first handle insert patches that are empty strings or arrays
 		if (patch.action === 'insert') {
 			// Given an insert patch, we run iterate through values looking for empty inserts of strings or arrays
@@ -532,7 +532,7 @@ coreUtilsModule.consolidateAutomergePatches = (patches) => {
 							continue;
 						}
 						// The path we are looking for is the same as the search path, but with the second to last index increased by j, which represents the value we've reached
-						let newPath = structuredClone(searchPath);
+						let newPath = Array.from(searchPath);
 						newPath[searchPath.length-1] = searchPath[searchPath.length-1]+j;
 						// We are looking for inserts and splices at the beginning of an array or string so we append 0
 						newPath.push(0);
@@ -564,7 +564,7 @@ coreUtilsModule.consolidateAutomergePatches = (patches) => {
 					handleDelInForwardPatches(forwardPatch, searchPath);
 					continue;
 				}
-				let newPath = structuredClone(searchPath);
+				let newPath = Array.from(searchPath);
 				// We are looking for splices at the beginning of a string, so we append 0
 				newPath.push(0);
 				if (forwardPatch.path.join() === newPath.join()) {
