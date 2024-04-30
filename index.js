@@ -97,7 +97,7 @@ async function installServiceWorker() {
 }
 
 async function initializeRepo() {
-	let peerId = "fedistrates-client-" + Math.round(Math.random() * 1000000);
+	let peerId = "mywebstrates-client-" + Math.round(Math.random() * 1000000);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
 		network: [],
@@ -166,6 +166,7 @@ if (match) {
 		console.log(e);
 		throw e;
 	}
+	document.body.innerHTML = "Found strate, loading data...";
 	let rootDoc = await rootHandle.doc();
 	let contentHandle;
 	let contentDoc;
@@ -275,7 +276,7 @@ async function setupWebstrates(handle) {
 
 				// Ephemeral messages might be sent multiple times, so we need to deduplicate them.
 				let messageMap = new Map();
-				handle.on('ephemeral-message', (messageObj) => {
+				automerge.rootHandle.on('ephemeral-message', (messageObj) => {
 					let message = messageObj.message;
 					if (!message.uuid) return;
 					if (!messageMap.has(message.uuid)) {

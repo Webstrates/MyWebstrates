@@ -12,7 +12,7 @@ import { md5 } from 'js-md5';
 
 const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v103"
+const CACHE_NAME = "v106"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -283,7 +283,7 @@ async function handleNewMatch(event, newMatch) {
 
 async function handleAssetMatch(event, assetMatch) {
 	let docId = assetMatch[1].split("@")[0];
-	let filename = assetMatch[2];
+	let filename = decodeURIComponent(assetMatch[2]);
 	// Check if it is a zip file
 	let path = filename.split('/');
 	let isZip = false;
