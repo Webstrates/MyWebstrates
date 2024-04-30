@@ -38,23 +38,23 @@ Object.defineProperty(globalObject.publicObject, 'migrate', {
 async function migrate() {
 	// Migrate from old to new version
 	let contentHandle = await automerge.repo.create();
-	if (automerge.mainDoc.content) {
+	if (automerge.rootDoc.content) {
 		console.warn("Webstrate already migrated, aborting");
 		return;
 	}
 	await contentHandle.change(d => {
-		if (automerge.mainDoc.assets) d.assets = JSON.parse(JSON.stringify(automerge.mainDoc.assets));
-		if (automerge.mainDoc.cache) d.cache = JSON.parse(JSON.stringify(automerge.mainDoc.cache));
-		if (automerge.mainDoc.data) d.data = JSON.parse(JSON.stringify(automerge.mainDoc.data));
-		if (automerge.mainDoc.dom) d.dom = JSON.parse(JSON.stringify(automerge.mainDoc.dom));
+		if (automerge.rootDoc.assets) d.assets = JSON.parse(JSON.stringify(automerge.rootDoc.assets));
+		if (automerge.rootDoc.cache) d.cache = JSON.parse(JSON.stringify(automerge.rootDoc.cache));
+		if (automerge.rootDoc.data) d.data = JSON.parse(JSON.stringify(automerge.rootDoc.data));
+		if (automerge.rootDoc.dom) d.dom = JSON.parse(JSON.stringify(automerge.rootDoc.dom));
 	});
-	await automerge.mainHandle.change(d => {
+	await automerge.rootHandle.change(d => {
 		d.content = contentHandle.documentId;
 		delete d.assets;
 		delete d.cache;
 		delete d.data;
 		delete d.dom;
-		d.meta.migrated = {ts: Date.now(), heads: automerge.mainHandle.heads()};
+		d.meta.migrated = {ts: Date.now(), heads: automerge.rootHandle.heads()};
 	});
 	alert("Migration complete. Please reload the page to continue");
 }
@@ -66,8 +66,8 @@ async function migrate() {
  * @returns {Promise<void>}
  */
 async function saveToZip() {
-	let docs = [{id: `rootDoc-${automerge.mainHandle.documentId}`, doc: await automerge.mainHandle.doc()}];
-	if (automerge.mainDoc.content) {
+	let docs = [{id: `rootDoc-${automerge.rootHandle.documentId}`, doc: await automerge.rootHandle.doc()}];
+	if (automerge.rootDoc.content) {
 		docs.push({id: `contentDoc-${automerge.contentHandle.documentId}`, doc: await automerge.contentHandle.doc()});
 	}
 	for (let asset of webstrate.assets) {
@@ -96,7 +96,7 @@ async function saveToZip() {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `${automerge.mainHandle.documentId}.zip`;
+	a.download = `${automerge.rootHandle.documentId}.zip`;
 	a.click();
 	URL.revokeObjectURL(url);
 }

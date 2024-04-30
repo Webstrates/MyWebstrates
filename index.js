@@ -156,34 +156,34 @@ setupMessageChannel(repo);
 let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');
 if (match) {
 	let documentId = match[1];
-	let mainHandle;
+	let rootHandle;
 	document.body.innerHTML = "Looking up strate...";
 	try {
-		mainHandle = await repo.find(`automerge:${documentId}`);
+		rootHandle = await repo.find(`automerge:${documentId}`);
 	} catch (e) {
 		console.log("Failed to load strate document from Automerge");
 		document.body.innerHTML = "Could not find the strate.";
 		console.log(e);
 		throw e;
 	}
-	let mainDoc = await mainHandle.doc();
+	let rootDoc = await rootHandle.doc();
 	let contentHandle;
 	let contentDoc;
-	if (mainDoc.content) {
-		contentHandle = await repo.find(`automerge:${mainDoc.content}`);
+	if (rootDoc.content) {
+		contentHandle = await repo.find(`automerge:${rootDoc.content}`);
 		contentDoc = await contentHandle.doc();
 	}
 	if (!contentHandle) {
 		console.warn("Legacy strate: No content handle found, using main handle as content handle. Use webstrate.migrate() to migrate to the new format.");
-		contentHandle = mainHandle;
-		contentDoc = mainDoc;
+		contentHandle = rootHandle;
+		contentDoc = rootDoc;
 	}
 	_automerge.contentHandle = contentHandle;
-	_automerge.mainHandle = mainHandle;
+	_automerge.rootHandle = rootHandle;
 	_automerge.contentDoc = contentDoc;
-	_automerge.mainDoc = mainDoc;
+	_automerge.rootDoc = rootDoc;
 
-	await setupSyncServers(mainHandle);
+	await setupSyncServers(rootHandle);
 	await setupAssetHandles(contentHandle);
 	await setupCacheHandles(contentHandle);
 	setupWebstrates(contentHandle);
@@ -229,12 +229,12 @@ function setupCacheHandles(handle) {
 
 function setupAutomergeObject() {
 	window.automerge = automerge;
-	Object.defineProperty(automerge, "mainHandle", {
-		get: () => _automerge.mainHandle,
+	Object.defineProperty(automerge, "rootHandle", {
+		get: () => _automerge.rootHandle,
 		set: () => {throw new Error("Cannot set handle")}
 	});
-	Object.defineProperty(automerge, "mainDoc", {
-		get: () => _automerge.mainDoc,
+	Object.defineProperty(automerge, "rootDoc", {
+		get: () => _automerge.rootDoc,
 		set: () => {throw new Error("Cannot set doc")}
 	});
 	Object.defineProperty(automerge, "contentHandle", {

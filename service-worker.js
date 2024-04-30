@@ -264,18 +264,18 @@ async function handleNewMatch(event, newMatch) {
 				}
 			}
 		}
-		let mainHandle = (await repo).create()
+		let rootHandle = (await repo).create()
 		let contentHandle = (await repo).create()
 		await contentHandle.change(d => {
 			d.assets = assets;
 			d.data = {};
 			d.dom = jsonML ? jsonML : generateDOM("New webstrate")
 		});
-		await mainHandle.change(d => {
+		await rootHandle.change(d => {
 			d.meta = {federations: []};
 			d.content = contentHandle.documentId;
 		});
-		let id = mainHandle.documentId;
+		let id = rootHandle.documentId;
 		await new Promise(r => setTimeout(r, 500));
 		return Response.redirect(`/s/${id}/`);
 	}
@@ -388,8 +388,8 @@ async function handleStrateMatch(event, match) {
 	let documentId = match[1];
 	let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 	if (syncServer) await addSyncServer(`wss://${syncServer}`);
-	let mainDocHandle = (await repo).find(`automerge:${documentId}`);
-	let mainDoc = await mainDocHandle.doc();
+	let rootDocHandle = (await repo).find(`automerge:${documentId}`);
+	let rootDoc = await rootDocHandle.doc();
 	// To make it possible to import automerge and automerge-repo we need to add them to the importMap
 	// If a user imports them, we want to make sure they get the same instance as running in the client
 	let automergeRepoExports = '';
@@ -401,14 +401,14 @@ async function handleStrateMatch(event, match) {
 		automergeCoreExports += `export const ${key} = AutomergeCore.${key};\n`;
 	}
 
-	let importMap = mainDoc && mainDoc.meta && mainDoc.meta.importMap ? mainDoc.meta.importMap : {imports:{}};
+	let importMap = rootDoc && rootDoc.meta && rootDoc.meta.importMap ? rootDoc.meta.importMap : {imports:{}};
 	importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeCoreExports);
 	importMap.imports["@automerge/automerge-repo"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeRepoExports);
 	importMap = JSON.stringify(importMap);
 
-	let caching = mainDoc && mainDoc.meta && mainDoc.meta.caching ? mainDoc.meta.caching : false;
+	let caching = rootDoc && rootDoc.meta && rootDoc.meta.caching ? rootDoc.meta.caching : false;
 	if (caching) {
-		stratesWithCache.set(event.resultingClientId, mainDocHandle.documentId);
+		stratesWithCache.set(event.resultingClientId, rootDocHandle.documentId);
 	}
 	return new Response(`<!DOCTYPE html>
 	<html>

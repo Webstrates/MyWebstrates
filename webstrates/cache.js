@@ -43,7 +43,7 @@ Object.defineProperty(publicObject, 'cached', {
 });
 
 Object.defineProperty(publicObject, 'enabled', {
-	get: () => automerge.mainDoc.meta.caching ? true : false,
+	get: () => automerge.rootDoc.meta.caching ? true : false,
 	set: () => { throw new Error('Internal enabled method should not be modified'); },
 	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
 	// due to the circular reference.
@@ -65,7 +65,7 @@ function remove(url) {
 }
 
 function enable() {
-	automerge.mainHandle.change(d => {
+	automerge.rootHandle.change(d => {
 		d.meta.caching = true
 	});
 	automerge.contentHandle.change(d => {
@@ -74,7 +74,7 @@ function enable() {
 }
 
 function disable() {
-	automerge.mainHandle.change(d => d.meta.caching = false);
+	automerge.rootHandle.change(d => d.meta.caching = false);
 }
 
 function clear()

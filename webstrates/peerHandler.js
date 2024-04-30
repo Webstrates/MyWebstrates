@@ -20,8 +20,8 @@ coreEvents.addEventListener('message', (message) => {
 });
 
 function ping() {
-	if (!window.automerge || window.automerge.mainHandle === undefined) return;
-	automerge.mainHandle.broadcast({wa: "ping", body: globalObject.publicObject.clientId, uuid: coreUtils.generateUUID()});
+	if (!window.automerge || window.automerge.rootHandle === undefined) return;
+	automerge.rootHandle.broadcast({wa: "ping", body: globalObject.publicObject.clientId, uuid: coreUtils.generateUUID()});
 	for (let peer of peers) {
 		if (Date.now() - peer.timestamp > 10000) {
 			peers = peers.filter(p => p !== peer);

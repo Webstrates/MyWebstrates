@@ -58,29 +58,29 @@ function stringify() {
 
 function remove() {
 	if (!automerge.doc.meta.importMap) return;
-	automerge.mainHandle.change(d => delete d.meta.importMap);
+	automerge.rootHandle.change(d => delete d.meta.importMap);
 }
 
 function create(map = { imports: {}}) {
 	if (automerge.doc.meta.importMap) return;
-	automerge.mainHandle.change(d => d.meta.importMap = map);
+	automerge.rootHandle.change(d => d.meta.importMap = map);
 }
 
 function addImport(path, value) {
 	if (!automerge.doc.meta.importMap) create();
-	automerge.mainHandle.change(d => d.meta.importMap.imports[path] = value);
+	automerge.rootHandle.change(d => d.meta.importMap.imports[path] = value);
 }
 
 function removeImport(path) {
 	if (!automerge.doc.meta.importMap || !automerge.doc.meta.importMap.imports || !automerge.doc.meta.importMap.imports[path]) return;
-	automerge.mainHandle.change(d => delete d.meta.importMap.imports[path]);
+	automerge.rootHandle.change(d => delete d.meta.importMap.imports[path]);
 }
 
 function replace(importMap) {
 	if (typeof importMap === 'string') {
 		importMap = JSON.parse(importMap);
 	}
-	automerge.mainHandle.change(d => d.meta.importMap = importMap);
+	automerge.rootHandle.change(d => d.meta.importMap = importMap);
 }
 
 
