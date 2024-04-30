@@ -107,17 +107,17 @@ async function saveToZip() {
  * @returns {Promise<void>}
  */
 async function exportToZip() {
-	let jsonML = automerge.doc.dom;
+	let jsonML = automerge.contentDoc.dom;
 	let html = jsonmlTools.toXML(jsonML, []);
 	html = html.replace(/ __wid="[^"]*"/g, "");
 	const blobWriter = new BlobWriter("application/zip");
 	const zipWriter = new ZipWriter(blobWriter);
 	await zipWriter.add("index.html", new TextReader(html));
-	if (automerge.doc.data) {
-		await zipWriter.add("data.json", new TextReader(JSON.stringify(automerge.doc.data)));
+	if (automerge.contentDoc.data) {
+		await zipWriter.add("data.json", new TextReader(JSON.stringify(automerge.contentDoc.data)));
 	}
-	if (automerge.doc.meta) {
-		await zipWriter.add("meta.json", new TextReader(JSON.stringify(automerge.doc.meta)));
+	if (automerge.rootDoc.meta) {
+		await zipWriter.add("meta.json", new TextReader(JSON.stringify(automerge.rootDoc.meta)));
 	}
 	for (let asset of webstrate.assets) {
 		const handle = await automerge.repo.find(`automerge:${asset.id}`);
@@ -129,7 +129,7 @@ async function exportToZip() {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `${automerge.handle.documentId}.zip`;
+	a.download = `${automerge.rootHandle.documentId}.zip`;
 	a.click();
 	URL.revokeObjectURL(url);
 }
@@ -271,14 +271,18 @@ async function importFromZip() {
 					assets.push(asset);
 				}
 			}
-			let handle = automerge.repo.create()
-			await handle.change(d => {
+			let rootHandle = await automerge.repo.create()
+			let contentHandle = await automerge.repo.create();
+			await contentHandle.change(d => {
 				d.assets = assets;
-				d.meta = meta;
 				d.data = data;
 				d.dom = jsonML;
 			});
-			let id = handle.documentId;
+			await rootHandle.change(d => {
+				d.content = contentHandle.documentId;
+				d.meta = meta;
+			})
+			let id = rootHandle.documentId;
 			await new Promise(r => setTimeout(r, 1000));
 			window.open(`/s/${id}/`, '_blank');
 		};
