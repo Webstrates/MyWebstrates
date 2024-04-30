@@ -157,17 +157,23 @@ let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');
 if (match) {
 	let documentId = match[1];
 	let rootHandle;
-	document.body.innerHTML = "Looking up strate...";
+	document.body.innerHTML = generateLoadingPage();
 	try {
 		rootHandle = await repo.find(`automerge:${documentId}`);
 	} catch (e) {
 		console.log("Failed to load strate document from Automerge");
-		document.body.innerHTML = "Could not find the strate.";
+		document.querySelector("#message").innerHTML = "Could not find strate.";
+		document.querySelector(".spinner").style.display = "none";
 		console.log(e);
 		throw e;
 	}
-	document.body.innerHTML = "Found strate, loading data...";
+	let timeout = setTimeout(() => {
+		document.querySelector("#message").innerHTML = "Could not find strate.";
+		document.querySelector(".spinner").style.display = "none";
+	}, 5000);
 	let rootDoc = await rootHandle.doc();
+	clearTimeout(timeout);
+	document.querySelector("#message").innerHTML = "Found strate, loading data...";
 	let contentHandle;
 	let contentDoc;
 	if (rootDoc.content) {
@@ -295,6 +301,39 @@ async function setupWebstrates(handle) {
 				}, 10000);
 			})
 		});
+}
+
+function generateLoadingPage() {
+	return `
+<p id="message">Looking up strate...</p>
+<div class="spinner"></div>
+<style type="text/css" media="screen">
+body {
+	font-family: sans-serif;
+	font-weight: 200;
+	-webkit-font-smoothing: antialiased;
+	text-align: center;
+	margin-top: 15%;
+	animation: fadein 1s;
+}
+@keyframes fadein {
+	0% { opacity: 0; }
+	100% { opacity: 1; }
+}
+.spinner {
+	width: 40px;
+	height: 40px;
+	margin: 0 auto;
+	background-color: #31a46f;
+	animation: rotateplane 1.2s infinite ease-in-out;
+}
+@keyframes rotateplane {
+	0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); }
+	50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); }
+	100% { transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg); }
+}
+</style>
+	`
 }
 
 

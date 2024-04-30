@@ -36,13 +36,31 @@
     img {
         width: 100%;
     }
+    @keyframes fadein {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+    #spinner {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto;
+        background-color: #31a46f;
+        animation: rotateplane 1.2s infinite ease-in-out;
+    }
+    @keyframes rotateplane {
+        0% { transform: perspective(120px) rotateX(0deg) rotateY(0deg); }
+        50% { transform: perspective(120px) rotateX(-180.1deg) rotateY(0deg); }
+        100% { transform: perspective(120px) rotateX(-180deg) rotateY(-179.9deg); }
+    }
 </style>
-<div id="localfirst"><img src="local-first.png"></div>
-<div id="logo"><img src="mywebstrates.png"></div>
-<h1><em>my.webstrates.net</em><br>Local-first Webstrates</h1>
+<div id="frontpage">
+    <div id="localfirst"><img src="local-first.png"></div>
+    <div id="logo"><img src="mywebstrates.png"></div>
+    <h1><em>my.webstrates.net</em><br>Local-first Webstrates</h1>
 
-<p id="content"></p>
-
+    <p id="content"></p>
+</div>
+<div id="spinner" style="display: none;"></div>
 </body>
 
 </html>
