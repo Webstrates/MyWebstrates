@@ -12,7 +12,7 @@ import { md5 } from 'js-md5';
 
 const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v632"
+const CACHE_NAME = "v6010"
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -139,43 +139,70 @@ self.addEventListener("fetch", (event) => {
 	}
 });
 
+async function generateCacheResponse(documentId) {
+	let dataDocHandle = await (await repo).find(`automerge:${documentId}`);
+	let dataDoc = await dataDocHandle.doc();
+	const arrayBuffer = dataDoc.data;
+	let headers = new Headers();
+	for (let header in dataDoc.headers) {
+		headers.set(header, dataDoc.headers[header]);
+	}
+	return new Response(arrayBuffer, {headers: headers});
+}
+
 function handleRemoteFetch(event) {
 	// We now check if the webstrate has caching enabled
 	let strateWithCaching = stratesWithCache.get(event.clientId);
 	if (strateWithCaching) {
-	    let cacheDoc = async ()=>{
-		// If it does, we fetch the strate document
-		let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
-		let doc = await docHandle.doc()
-		if (doc && !doc.cache) {
-			// If a cache hasn't been built yet, we will create one with the first URL that's being requested
-			let dataDocHandle = await createDataDoc(event.request)
-			if (dataDocHandle) {
-				let cache = {};
-				cache[event.request.url] = dataDocHandle.documentId;
-				await docHandle.change(d => d.cache = cache);
+		let cacheDoc = async () => {
+			const clientsList = await clients.matchAll({ includeUncontrolled: true, type: 'window' });
+			const targetClient = clientsList.find(client => client.url.includes(strateWithCaching));
+			const messageChannel = new MessageChannel();
+			let getCacheItem = function() {
+				return new Promise((resolve, reject) => {
+					targetClient.postMessage({
+						type: 'CACHE_REQUEST',
+						url: event.request.url
+					}, [messageChannel.port2]);
+					messageChannel.port1.onmessage = (event) => {
+						if (event.data.type === 'CACHE_RESPONSE') {
+							resolve(event.data.cacheItem);
+						}
+					}
+				});
 			}
-			//return newResponse;
-		} else if (doc && doc.cache && !doc.cache[event.request.url]) {
-			// if the cache exists, but the file hasn't been cached, we cache it
-			let dataDocHandle = await createDataDoc(event.request);
-			if (dataDocHandle) {
-				await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
+			const cacheItem = await getCacheItem();
+			if (cacheItem) {
+				return await generateCacheResponse(cacheItem);
 			}
-		}
-		doc = await docHandle.doc();
-		let dataDocId = doc.cache[event.request.url];
-		let dataDocHandle = await (await repo).find(`automerge:${dataDocId}`);
-		let dataDoc = await dataDocHandle.doc();
-		const arrayBuffer = dataDoc.data;
-		let headers = new Headers();
-		for (let header in dataDoc.headers) {
-			headers.set(header, dataDoc.headers[header]);
-		}
-
-		return new Response(arrayBuffer, {headers: headers});
-	    };
-	    return cacheDoc();
+			// If it does, we fetch the strate document
+			let docHandle = await (await repo).find(`automerge:${strateWithCaching}`);
+			let doc = await docHandle.doc()
+			if (doc.content) {
+				docHandle = await (await repo).find(`automerge:${doc.content}`);
+				doc = await docHandle.doc();
+			}
+			if (doc && !doc.cache) {
+				// If a cache hasn't been built yet, we will create one with the first URL that's being requested
+				let dataDocHandle = await createDataDoc(event.request)
+				if (dataDocHandle) {
+					let cache = {};
+					cache[event.request.url] = dataDocHandle.documentId;
+					await docHandle.change(d => d.cache = cache);
+				}
+				//return newResponse;
+			} else if (doc && doc.cache && !doc.cache[event.request.url]) {
+				// if the cache exists, but the file hasn't been cached, we cache it
+				let dataDocHandle = await createDataDoc(event.request);
+				if (dataDocHandle) {
+					await docHandle.change(d => d.cache[event.request.url] = dataDocHandle.documentId);
+				}
+			}
+			doc = await docHandle.doc();
+			let dataDocId = doc.cache[event.request.url];
+			return await generateCacheResponse(dataDocId);
+		};
+		return cacheDoc();
 	}
 	return;
 }
@@ -237,14 +264,18 @@ async function handleNewMatch(event, newMatch) {
 				}
 			}
 		}
-		let handle = (await repo).create()
-		await handle.change(d => {
+		let mainHandle = (await repo).create()
+		let contentHandle = (await repo).create()
+		await contentHandle.change(d => {
 			d.assets = assets;
-			d.meta = {federations: []};
 			d.data = {};
 			d.dom = jsonML ? jsonML : generateDOM("New webstrate")
 		});
-		let id = handle.documentId;
+		await mainHandle.change(d => {
+			d.meta = {federations: []};
+			d.content = contentHandle.documentId;
+		});
+		let id = mainHandle.documentId;
 		await new Promise(r => setTimeout(r, 500));
 		return Response.redirect(`/s/${id}/`);
 	}
@@ -268,16 +299,41 @@ async function handleAssetMatch(event, assetMatch) {
 		zipPath = path.slice(1).join('/');
 	}
 
-	let handle = (await repo).find(`automerge:${docId}`);
-	let doc = await handle.doc();
+	const clientsList = await clients.matchAll({ includeUncontrolled: true, type: 'window' });
+	const targetClient = clientsList.find(client => client.url.includes(docId));
+	const messageChannel = new MessageChannel();
+	let getAsset = function() {
+		return new Promise((resolve, reject) => {
+			targetClient.postMessage({
+				type: 'ASSET_REQUEST',
+				fileName: filename
+			}, [messageChannel.port2]);
+			messageChannel.port1.onmessage = (event) => {
+				if (event.data.type === 'ASSET_RESPONSE') {
+					resolve(event.data.asset);
+				}
+			}
+		});
+	}
+	const asset = await getAsset();
 	let assetId;
-	for (let asset of doc.assets) {
-		if (asset.fileName === filename) {
-			assetId = asset.id;
+	if (!asset) {
+		let handle = (await repo).find(`automerge:${docId}`);
+		let doc = await handle.doc();
+		if (doc.content) {
+			handle = (await repo).find(`automerge:${doc.content}`);
+			doc = await handle.doc();
 		}
+		for (let asset of doc.assets) {
+			if (asset.fileName === filename) {
+				assetId = asset.id;
+			}
+		}
+	} else {
+		assetId = asset.id;
 	}
 	if (assetId) {
-		let assetHandle = (await repo).find(`automerge:${assetId}`);
+		let assetHandle = (await repo).find(`automerge:${asset.id}`);
 		let assetDoc = await assetHandle.doc();
 		const uint8Array = assetDoc.data;
 		if (isZip && isZipDir) {
@@ -332,8 +388,8 @@ async function handleStrateMatch(event, match) {
 	let documentId = match[1];
 	let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 	if (syncServer) await addSyncServer(`wss://${syncServer}`);
-	let docHandle = (await repo).find(`automerge:${documentId}`);
-	let doc = await docHandle.doc();
+	let mainDocHandle = (await repo).find(`automerge:${documentId}`);
+	let mainDoc = await mainDocHandle.doc();
 	// To make it possible to import automerge and automerge-repo we need to add them to the importMap
 	// If a user imports them, we want to make sure they get the same instance as running in the client
 	let automergeRepoExports = '';
@@ -345,14 +401,14 @@ async function handleStrateMatch(event, match) {
 		automergeCoreExports += `export const ${key} = AutomergeCore.${key};\n`;
 	}
 
-	let importMap = doc && doc.meta && doc.meta.importMap ? doc.meta.importMap : {imports:{}};
+	let importMap = mainDoc && mainDoc.meta && mainDoc.meta.importMap ? mainDoc.meta.importMap : {imports:{}};
 	importMap.imports["@automerge/automerge"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeCoreExports);
 	importMap.imports["@automerge/automerge-repo"] = "data:application/javascript;charset=utf-8," + encodeURIComponent(automergeRepoExports);
 	importMap = JSON.stringify(importMap);
 
-	let caching = doc && doc.meta && doc.meta.caching ? doc.meta.caching : false;
+	let caching = mainDoc && mainDoc.meta && mainDoc.meta.caching ? mainDoc.meta.caching : false;
 	if (caching) {
-		stratesWithCache.set(event.resultingClientId, docHandle.documentId);
+		stratesWithCache.set(event.resultingClientId, mainDocHandle.documentId);
 	}
 	return new Response(`<!DOCTYPE html>
 	<html>

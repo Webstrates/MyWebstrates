@@ -29,6 +29,36 @@ Object.defineProperty(globalObject.publicObject, 'exportToZip', {
 	enumerable: false
 });
 
+Object.defineProperty(globalObject.publicObject, 'migrate', {
+	get: () => migrate,
+	set: () => { throw new Error('Internal migrate method should not be modified'); },
+	enumerable: false
+});
+
+async function migrate() {
+	// Migrate from old to new version
+	let contentHandle = await automerge.repo.create();
+	if (automerge.mainDoc.content) {
+		console.warn("Webstrate already migrated, aborting");
+		return;
+	}
+	await contentHandle.change(d => {
+		if (automerge.mainDoc.assets) d.assets = JSON.parse(JSON.stringify(automerge.mainDoc.assets));
+		if (automerge.mainDoc.cache) d.cache = JSON.parse(JSON.stringify(automerge.mainDoc.cache));
+		if (automerge.mainDoc.data) d.data = JSON.parse(JSON.stringify(automerge.mainDoc.data));
+		if (automerge.mainDoc.dom) d.dom = JSON.parse(JSON.stringify(automerge.mainDoc.dom));
+	});
+	await automerge.mainHandle.change(d => {
+		d.content = contentHandle.documentId;
+		delete d.assets;
+		delete d.cache;
+		delete d.data;
+		delete d.dom;
+		d.meta.migrated = {ts: Date.now(), heads: automerge.mainHandle.heads()};
+	});
+	alert("Migration complete. Please reload the page to continue");
+}
+
 
 /**
  * Download the current strate and its assets as a zip file.
@@ -36,20 +66,27 @@ Object.defineProperty(globalObject.publicObject, 'exportToZip', {
  * @returns {Promise<void>}
  */
 async function saveToZip() {
-	let docs = [{id: `rootDoc-${automerge.handle.documentId}`, doc: await automerge.handle.doc()}];
+	let docs = [{id: `rootDoc-${automerge.mainHandle.documentId}`, doc: await automerge.mainHandle.doc()}];
+	if (automerge.mainDoc.content) {
+		docs.push({id: `contentDoc-${automerge.contentHandle.documentId}`, doc: await automerge.contentHandle.doc()});
+	}
 	for (let asset of webstrate.assets) {
 		const handle = await automerge.repo.find(`automerge:${asset.id}`);
 		const assetDoc = await handle.doc();
 		docs.push({id: handle.documentId, doc: assetDoc});
 	}
-	if (automerge.doc.cache) {
-		for (let cacheItem of Object.values(automerge.doc.cache)) {
+	if (automerge.contentDoc.cache) {
+		for (let cacheItem of Object.values(automerge.contentDoc.cache)) {
 			const handle = await automerge.repo.find(`automerge:${cacheItem}`);
 			const cacheDoc = await handle.doc();
 			docs.push({id: handle.documentId, doc: cacheDoc});
 		}
 	}
-	let data = docs.map(d => {return {id: d.id, doc: Automerge.save(d.doc)}})
+	let data = await Promise.all(docs.map(async d => {
+		let id = d.id.replace('rootDoc-', '');
+		id = id.replace('contentDoc-', '');
+		return {id: d.id, doc: await automerge.repo.export(`automerge:${id}`)}
+	}));
 	const blobWriter = new BlobWriter("application/zip");
 	const zipWriter = new ZipWriter(blobWriter);
 	for (let file of data) {
@@ -59,7 +96,7 @@ async function saveToZip() {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;
-	a.download = `${automerge.handle.documentId}.zip`;
+	a.download = `${automerge.mainHandle.documentId}.zip`;
 	a.click();
 	URL.revokeObjectURL(url);
 }
@@ -114,18 +151,27 @@ async function loadFromZip() {
 			const zipReader = new ZipReader(blobReader);
 			const entries = await zipReader.getEntries();
 			let rootHandle;
+			let contentHandle;
 			let otherHandles = {};
 			for (let entry of entries) {
 				const docData = await entry.getData(new Uint8ArrayWriter());
 				let handle = await automerge.repo.import(docData);
 				if (entry.filename.startsWith('rootDoc-')) {
 					rootHandle = handle;
+				} else if (entry.filename.startsWith('contentDoc-')) {
+					contentHandle = handle;
 				} else {
 					otherHandles[entry.filename] = handle;
 				}
 			}
 			let rootDoc = await rootHandle.doc();
-			let assets = structuredClone(rootDoc.assets);
+			let contentDoc;
+			if (rootDoc.content) {
+				contentDoc = await contentHandle.doc();
+			}  else {
+				contentDoc = rootDoc;
+			}
+			let assets = structuredClone(contentDoc.assets);
 			for (let asset of assets) {
 				for (let oldDocId in otherHandles) {
 					if (asset.id === oldDocId) {
@@ -134,8 +180,8 @@ async function loadFromZip() {
 				}
 			}
 			let cache = {};
-			if (Object.hasOwn(rootDoc, 'cache')) {
-				cache = structuredClone(rootDoc.cache);
+			if (Object.hasOwn(contentDoc, 'cache')) {
+				cache = structuredClone(contentDoc.cache);
 				for (let cacheItem in cache) {
 					for (let oldDocId in otherHandles) {
 						if (cache[cacheItem] == oldDocId) {
@@ -144,10 +190,22 @@ async function loadFromZip() {
 					}
 				}
 			}
-			await rootHandle.change(d => {
-				d.assets = assets
-				d.cache = JSON.parse(JSON.stringify(cache));
-			});
+			if (contentHandle) {
+				await contentHandle.change(d => {
+					d.assets = assets
+					d.cache = JSON.parse(JSON.stringify(cache));
+				});
+				if (rootDoc.content) {
+					await rootHandle.change(d => {
+						d.content = contentHandle.documentId;
+					});
+				}
+			} else {
+				await rootHandle.change(d => {
+					d.assets = assets
+					d.cache = JSON.parse(JSON.stringify(cache));
+				});
+			}
 			for (let otherHandle of Object.values(otherHandles)) {
 				await otherHandle.doc();
 			}

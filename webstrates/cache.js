@@ -33,8 +33,8 @@ Object.defineProperty(publicObject, 'clear', {
 
 Object.defineProperty(publicObject, 'cached', {
 	get: () => {
-		if (!automerge.doc.cache) return {};
-		return structuredClone(automerge.doc.cache);
+		if (!automerge.contentDoc.cache) return {};
+		return structuredClone(automerge.contentDoc.cache);
 	},
 	set: () => { throw new Error('Cached cannot directly be modified'); },
 	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
@@ -43,7 +43,7 @@ Object.defineProperty(publicObject, 'cached', {
 });
 
 Object.defineProperty(publicObject, 'enabled', {
-	get: () => automerge.doc.meta.caching ? true : false,
+	get: () => automerge.mainDoc.meta.caching ? true : false,
 	set: () => { throw new Error('Internal enabled method should not be modified'); },
 	// If enumerable is 'true', Puppeteer tests fail as `window.webstrate` is suddenly undefined
 	// due to the circular reference.
@@ -60,24 +60,26 @@ Object.defineProperty(publicObject, 'remove', {
 })
 
 function remove(url) {
-	if (!automerge.doc.cache || !automerge.doc.cache[url]) throw new Error(`${url} is not cached`);
-	automerge.handle.change(d => delete d.cache[url]);
+	if (!automerge.contentDoc.cache || !automerge.contentDoc.cache[url]) throw new Error(`${url} is not cached`);
+	automerge.contentHandle.change(d => delete d.cache[url]);
 }
 
 function enable() {
-	automerge.handle.change(d => {
+	automerge.mainHandle.change(d => {
 		d.meta.caching = true
-		if (!d.cache)	d.cache = {};
 	});
+	automerge.contentHandle.change(d => {
+		if (!d.cache)	d.cache = {};
+	})
 }
 
 function disable() {
-	automerge.handle.change(d => d.meta.caching = false);
+	automerge.mainHandle.change(d => d.meta.caching = false);
 }
 
 function clear()
 {
-	automerge.handle.change(d => d.cache = {});
+	automerge.contentHandle.change(d => d.cache = {});
 }
 
 

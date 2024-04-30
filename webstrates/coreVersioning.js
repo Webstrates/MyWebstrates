@@ -8,14 +8,14 @@ const versioningModule = {};
  * Get the current version number of the strate.
  */
 Object.defineProperty(globalObject.publicObject, 'version', {
-	get: () => Automerge.getAllChanges(automerge.doc).length-1,
+	get: () => Automerge.getAllChanges(automerge.contentDoc).length-1,
 });
 
 /**
  * Get the version hash of the current version.
  */
 Object.defineProperty(globalObject.publicObject, 'versionHash', {
-	get: () => Automerge.getHeads(automerge.doc)[0],
+	get: () => Automerge.getHeads(automerge.contentDoc)[0],
 });
 
 /**
@@ -55,7 +55,7 @@ versioningModule.restore = async (handle, version) => {
  */
 Object.defineProperty(globalObject.publicObject, 'restore', {
 	value: async (version) => {
-		await versioningModule.restore(automerge.handle, version);
+		await versioningModule.restore(automerge.contentHandle, version);
 	}
 });
 
@@ -102,7 +102,7 @@ versioningModule.copy = async (handle, repo, options = {local: false, version: u
  */
 Object.defineProperty(globalObject.publicObject, 'copy', {
 		value: async (options = {local: false, version: undefined, openInNewTab: true}) => {
-			let newDocHandle = await versioningModule.copy(automerge.handle, automerge.repo, options);
+			let newDocHandle = await versioningModule.copy(automerge.contentHandle, automerge.repo, options);
 			if (options.openInNewTab) {
 				await new Promise(r => setTimeout(r, 500));
 				window.open(`/s/${newDocHandle.documentId}/`, '_blank');
@@ -128,7 +128,7 @@ versioningModule.clone = async (handle, repo) => {
  */
 Object.defineProperty(globalObject.publicObject, 'clone', {
 	value: async (options = {openInNewTab: true}) => {
-		let clonedDocHandle = await versioningModule.clone(automerge.handle, automerge.repo);
+		let clonedDocHandle = await versioningModule.clone(automerge.contentHandle, automerge.repo);
 		if (options.openInNewTab) {
 			await new Promise(r => setTimeout(r, 500));
 			window.open(`/s/${clonedDocHandle.documentId}/`, '_blank');
@@ -145,7 +145,7 @@ Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
 		let otherStrateHandle = automerge.repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
-		automerge.handle.merge(otherStrateHandle);
+		automerge.contentHandle.merge(otherStrateHandle);
 	}
 });
 

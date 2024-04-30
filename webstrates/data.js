@@ -4,7 +4,7 @@ import { coreDocument } from "./coreDocument";
 
 let updateData = (changeFunc) => {
 	coreDocument.localDataUpdates = true;
-	automerge.handle.change((doc => {
+	automerge.contentHandle.change((doc => {
 		changeFunc(doc.data);
 	}));
 	coreDocument.localDataUpdates = false;

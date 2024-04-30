@@ -4,7 +4,7 @@ import {globalObject} from "./globalObject";
 const coreFederationModule = {};
 
 globalObject.publicObject.addSyncServer = (host) => {
-	automerge.handle.change((doc) => {
+	automerge.mainHandle.change((doc) => {
 		if (!doc.meta.federations) doc.meta.federations = [];
 		if (doc.meta.federations.includes(host)) return;
 		doc.meta.federations.push(host);

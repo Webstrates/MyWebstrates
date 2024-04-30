@@ -38,8 +38,8 @@ Object.defineProperty(globalObject.publicObject, 'assets', {
 });
 
 function getAssets() {
-	if (!automerge.doc.assets) return {};
-	return structuredClone(automerge.doc.assets);
+	if (!automerge.contentDoc.assets) return {};
+	return structuredClone(automerge.contentDoc.assets);
 }
 
 /**
@@ -58,7 +58,7 @@ globalObject.publicObject.addAssetFromFile = async (file) => {
 			d.fileName = file.name;
 			d.v = 0;
 		});
-		automerge.handle.change(d => {
+		automerge.contentHandle.change(d => {
 			d.assets.push({fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId});
 		});
 		window.assetHandles.push(assetHandle);
@@ -97,7 +97,7 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 };
 
 globalObject.publicObject.deleteAsset = (assetName, callback) => {
-	automerge.handle.change((doc) => {
+	automerge.contentHandle.change((doc) => {
 		let toRemove;
 		for (let i = 0; i<doc.assets.length; i++) {
 			let asset = doc.assets[i];

@@ -23,7 +23,7 @@ coreDocumentModule.localDataUpdates = false;
 coreDocumentModule.subscribeToOps = function() {
 	coreEvents.addEventListener('createdOps', (ops) => {
 		window.suppressChanges = true;
-		automerge.handle.change(function(doc) {
+		automerge.contentHandle.change(function(doc) {
 			applyOpsToDoc(ops, doc);
 		})
 		window.suppressChanges = false;

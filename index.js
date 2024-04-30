@@ -126,7 +126,24 @@ function setupMessageChannel(repo) {
 	// Send one side of a MessageChannel to the service worker and register the other with the repo.
 	const messageChannel = new MessageChannel()
 	repo.networkSubsystem.addNetworkAdapter(new MessageChannelNetworkAdapter(messageChannel.port1))
-	navigator.serviceWorker.controller.postMessage({ type: "INIT_PORT" }, [messageChannel.port2])
+	navigator.serviceWorker.controller.postMessage({type: "INIT_PORT"}, [messageChannel.port2])
+	navigator.serviceWorker.addEventListener("message", (event) => {
+		if (event.data.type == 'ASSET_REQUEST') {
+			let asset;
+			for (let a of automerge.contentDoc.assets) {
+				if (a.fileName == event.data.fileName) {
+					asset = a;
+					break;
+				}
+			}
+			event.ports[0].postMessage({type: 'ASSET_RESPONSE', asset: asset});
+		}
+		if (event.data.type == 'CACHE_REQUEST') {
+			let cacheItem;
+			if (automerge.contentDoc.cache && automerge.contentDoc.cache[event.data.url]) cacheItem = automerge.contentDoc.cache[event.data.url];
+			event.ports[0].postMessage({type: 'CACHE_RESPONSE', cacheItem: cacheItem});
+		}
+	})
 }
 
 await installServiceWorker();
@@ -139,33 +156,37 @@ setupMessageChannel(repo);
 let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');
 if (match) {
 	let documentId = match[1];
-	let handle;
+	let mainHandle;
+	document.body.innerHTML = "Looking up strate...";
 	try {
-		handle = repo.find(`automerge:${documentId}`);
+		mainHandle = await repo.find(`automerge:${documentId}`);
 	} catch (e) {
 		console.log("Failed to load strate document from Automerge");
+		document.body.innerHTML = "Could not find the strate.";
 		console.log(e);
 		throw e;
 	}
-	_automerge.handle = handle;
-	if (handle) {
-		document.body.innerHTML = "Looking up strate...";
-		let timeout = setTimeout(() => {
-			document.body.innerHTML = "Could not find the strate.";
-		}, 5000);
-		let doc = await handle.doc();
-		clearTimeout(timeout);
-		if (!doc) {
-			document.body.innerHTML = "No such strate."
-		} else {
-			await setupSyncServers(handle);
-			await setupAssetHandles(handle);
-			await setupCacheHandles(handle);
-			setupWebstrates(handle);
-		}
-	} else {
-		document.body.innerHTML = "No such strate."
+	let mainDoc = await mainHandle.doc();
+	let contentHandle;
+	let contentDoc;
+	if (mainDoc.content) {
+		contentHandle = await repo.find(`automerge:${mainDoc.content}`);
+		contentDoc = await contentHandle.doc();
 	}
+	if (!contentHandle) {
+		console.warn("Legacy strate: No content handle found, using main handle as content handle. Use webstrate.migrate() to migrate to the new format.");
+		contentHandle = mainHandle;
+		contentDoc = mainDoc;
+	}
+	_automerge.contentHandle = contentHandle;
+	_automerge.mainHandle = mainHandle;
+	_automerge.contentDoc = contentDoc;
+	_automerge.mainDoc = mainDoc;
+
+	await setupSyncServers(mainHandle);
+	await setupAssetHandles(contentHandle);
+	await setupCacheHandles(contentHandle);
+	setupWebstrates(contentHandle);
 } else if ((window.location.pathname + window.location.search).match('/\?s/([a-zA-Z0-9]+)/?(.+)?')) {
 	setTimeout(() => {
 		window.location = window.location.pathname + window.location.search.slice(1);
@@ -174,8 +195,8 @@ if (match) {
 	document.querySelector("#content").innerHTML = `<strong>Client is installed</strong><br><br><a href="/new">Create a new blank webstrate.</a><br><a href="/new?prototypeUrl=https://cdn.jsdelivr.net/gh/Webstrates/Codestrates-v2@master/prototypes/web.zip">Create a new codestrate.</a>`;
 }
 
-function setupSyncServers(handle) {
-	return handle.doc().then((doc) => {
+function setupSyncServers(metaHandle) {
+	return metaHandle.doc().then((doc) => {
 		if (!doc.meta || !doc.meta.federations) return;
 		let syncServers = doc.meta.federations;
 		if (syncServers) {
@@ -208,12 +229,20 @@ function setupCacheHandles(handle) {
 
 function setupAutomergeObject() {
 	window.automerge = automerge;
-	Object.defineProperty(automerge, "handle", {
-		get: () => _automerge.handle,
+	Object.defineProperty(automerge, "mainHandle", {
+		get: () => _automerge.mainHandle,
 		set: () => {throw new Error("Cannot set handle")}
 	});
-	Object.defineProperty(automerge, "doc", {
-		get: () => _automerge.doc,
+	Object.defineProperty(automerge, "mainDoc", {
+		get: () => _automerge.mainDoc,
+		set: () => {throw new Error("Cannot set doc")}
+	});
+	Object.defineProperty(automerge, "contentHandle", {
+		get: () => _automerge.contentHandle,
+		set: () => {throw new Error("Cannot set handle")}
+	});
+	Object.defineProperty(automerge, "contentDoc", {
+		get: () => _automerge.contentDoc,
 		set: () => {throw new Error("Cannot set doc")}
 	});
 	Object.defineProperty(automerge, "repo", {
@@ -223,9 +252,9 @@ function setupAutomergeObject() {
 }
 
 
-function setupWebstrates(handle) {
+async function setupWebstrates(handle) {
 		handle.doc().then((doc) => {
-			_automerge.doc = doc;
+			_automerge.contentDoc = doc;
 
 			coreOpApplier.listenForOps();
 			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
@@ -241,7 +270,7 @@ function setupWebstrates(handle) {
 						let patches = change.patches;
 						coreDocument.handlePatches(patches);
 					}
-					_automerge.doc = change.doc;
+					_automerge.contentDoc = change.doc;
 				});
 
 				// Ephemeral messages might be sent multiple times, so we need to deduplicate them.
