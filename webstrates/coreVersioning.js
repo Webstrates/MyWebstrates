@@ -82,23 +82,38 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 	} else {
 		sourceDoc = await automerge.contentHandle.doc();
 	}
-	let newRootHandle = automerge.repo.create();
-	let newContentHandle = automerge.repo.create();
-	await newContentHandle.change(doc => {
-		// Copy over all properties from the source doc
-		for (const key in sourceDoc) {
-			doc[key] = structuredClone(sourceDoc[key]);
-		}
-	});
-	await newRootHandle.change(doc => {
-		doc.content = newContentHandle.documentId;
-		let meta = JSON.parse(JSON.stringify(automerge.rootDoc.meta));
-		if (options.local) {
-			meta.federations = [];
-		}
-		doc.meta = meta;
-	});
-	return newRootHandle;
+	if (automerge.rootDoc.content) {
+		let newRootHandle = automerge.repo.create();
+		let newContentHandle = automerge.repo.create();
+		await newContentHandle.change(doc => {
+			// Copy over all properties from the source doc
+			for (const key in sourceDoc) {
+				doc[key] = structuredClone(sourceDoc[key]);
+			}
+		});
+		await newRootHandle.change(doc => {
+			doc.content = newContentHandle.documentId;
+			let meta = JSON.parse(JSON.stringify(automerge.rootDoc.meta));
+			if (options.local) {
+				meta.federations = [];
+			}
+			doc.meta = meta;
+		});
+		return newRootHandle;
+	} else {
+		let newContentHandle = automerge.repo.create();
+		await newContentHandle.change(doc => {
+			// Copy over all properties from the source doc
+			for (const key in sourceDoc) {
+				doc[key] = structuredClone(sourceDoc[key]);
+			}
+			if (options.local) {
+				doc.meta.federations = [];
+			}
+		});
+		return newContentHandle;
+	}
+
 }
 
 /**
@@ -124,9 +139,17 @@ Object.defineProperty(globalObject.publicObject, 'copy', {
  * @param repo
  * @returns {Promise<*>}
  */
-versioningModule.clone = async (handle, repo) => {
-	let clonedDocHandle = repo.clone(handle);
-	return clonedDocHandle;
+versioningModule.clone = async () => {
+	let clonedContentHandle = automerge.repo.clone(automerge.contentHandle);
+	if (!automerge.rootDoc.content) {
+		return clonedContentHandle;
+	}
+	let rootHandle = automerge.repo.create();
+	await rootHandle.change(doc => {
+		doc.content = clonedContentHandle.documentId;
+		doc.meta = JSON.parse(JSON.stringify(automerge.rootDoc.meta));
+	});
+	return rootHandle;
 }
 
 /**
@@ -135,7 +158,7 @@ versioningModule.clone = async (handle, repo) => {
  */
 Object.defineProperty(globalObject.publicObject, 'clone', {
 	value: async (options = {openInNewTab: true}) => {
-		let clonedDocHandle = await versioningModule.clone(automerge.contentHandle, automerge.repo);
+		let clonedDocHandle = await versioningModule.clone();
 		if (options.openInNewTab) {
 			await new Promise(r => setTimeout(r, 500));
 			window.open(`/s/${clonedDocHandle.documentId}/`, '_blank');
@@ -152,6 +175,7 @@ Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
 		let otherStrateHandle = automerge.repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
+		let contentDoc = otherStrateDoc.content;
 		automerge.contentHandle.merge(otherStrateHandle);
 	}
 });
