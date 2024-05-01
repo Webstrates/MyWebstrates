@@ -16,7 +16,7 @@ Object.defineProperty(publicObject, 'create', {
 });
 
 Object.defineProperty(publicObject, 'content', {
-	get: () => structuredClone(automerge.doc.meta.importMap),
+	get: () => structuredClone(automerge.rootDoc.meta.importMap),
 	set: (importMap) => replace(importMap)
 })
 
@@ -53,26 +53,26 @@ Object.defineProperty(publicObject, 'stringify', {
 })
 
 function stringify() {
-	return JSON.stringify(automerge.doc.meta.importMap, null, 2);
+	return JSON.stringify(automerge.rootDoc.meta.importMap, null, 2);
 }
 
 function remove() {
-	if (!automerge.doc.meta.importMap) return;
+	if (!automerge.rootDoc.meta.importMap) return;
 	automerge.rootHandle.change(d => delete d.meta.importMap);
 }
 
 function create(map = { imports: {}}) {
-	if (automerge.doc.meta.importMap) return;
+	if (automerge.rootDoc.meta.importMap) return;
 	automerge.rootHandle.change(d => d.meta.importMap = map);
 }
 
 function addImport(path, value) {
-	if (!automerge.doc.meta.importMap) create();
+	if (!automerge.rootDoc.meta.importMap) create();
 	automerge.rootHandle.change(d => d.meta.importMap.imports[path] = value);
 }
 
 function removeImport(path) {
-	if (!automerge.doc.meta.importMap || !automerge.doc.meta.importMap.imports || !automerge.doc.meta.importMap.imports[path]) return;
+	if (!automerge.rootDoc.meta.importMap || !automerge.rootDoc.meta.importMap.imports || !automerge.rootDoc.meta.importMap.imports[path]) return;
 	automerge.rootHandle.change(d => delete d.meta.importMap.imports[path]);
 }
 
