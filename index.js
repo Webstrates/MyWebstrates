@@ -173,7 +173,7 @@ if (match) {
 	}, 5000);
 	let rootDoc = await rootHandle.doc();
 	clearTimeout(timeout);
-	document.querySelector("#message").innerHTML = "Found strate, loading data...";
+	document.querySelector("#message").remove();
 	let contentHandle;
 	let contentDoc;
 	if (rootDoc.content) {
@@ -190,10 +190,10 @@ if (match) {
 	_automerge.contentDoc = contentDoc;
 	_automerge.rootDoc = rootDoc;
 
-	await setupSyncServers(rootHandle);
-	await setupAssetHandles(contentHandle);
-	await setupCacheHandles(contentHandle);
-	setupWebstrates(contentHandle);
+	await setupSyncServers();
+	await setupAssetHandles();
+	await setupCacheHandles();
+	await setupWebstrates();
 } else if ((window.location.pathname + window.location.search).match('/\?s/([a-zA-Z0-9]+)/?(.+)?')) {
 	setTimeout(() => {
 		window.location = window.location.pathname + window.location.search.slice(1);
@@ -202,36 +202,33 @@ if (match) {
 	document.querySelector("#content").innerHTML = `<strong>Client is installed</strong><br><br><a href="/new">Create a new blank webstrate.</a><br><a href="/new?prototypeUrl=https://cdn.jsdelivr.net/gh/Webstrates/Codestrates-v2@master/prototypes/web.zip">Create a new codestrate.</a>`;
 }
 
-function setupSyncServers(metaHandle) {
-	return metaHandle.doc().then((doc) => {
-		if (!doc.meta || !doc.meta.federations) return;
-		let syncServers = doc.meta.federations;
-		if (syncServers) {
-			syncServers.forEach((server) => {
-				globalObject.publicObject.addSyncServer(server);
-			})
-		}
-	});
+function setupSyncServers() {
+	let rootDoc = automerge.rootDoc;
+	if (!rootDoc.meta || !rootDoc.meta.federations) return;
+	let syncServers = rootDoc.meta.federations;
+	if (syncServers) {
+		syncServers.forEach((server) => {
+			globalObject.publicObject.addSyncServer(server);
+		})
+	}
 }
 
-function setupAssetHandles(handle) {
-	return handle.doc().then(async (doc) => {
-		if (!doc.assets) return;
-		for (let asset of doc.assets) {
-			let assetHandle = (await repo).find(`automerge:${asset.id}`);
-			window.assetHandles.push(assetHandle);
-		}
-	});
+async function setupAssetHandles() {
+	let contentDoc = automerge.contentDoc;
+	if (!contentDoc.assets) return;
+	for (let asset of contentDoc.assets) {
+		let assetHandle = (await repo).find(`automerge:${asset.id}`);
+		window.assetHandles.push(assetHandle);
+	}
 }
 
-function setupCacheHandles(handle) {
-	return handle.doc().then(async (doc) => {
-		if (!doc.cache) return;
-		for (let cached in doc.cache) {
-			let cachedHandle = (await repo).find(`automerge:${doc.cache[cached]}`);
-			window.cacheHandles.push(cachedHandle);
-		}
-	});
+async function setupCacheHandles() {
+	let contentDoc = automerge.contentDoc;
+	if (!contentDoc.cache) return;
+	for (let cached in contentDoc.cache) {
+		let cachedHandle = (await repo).find(`automerge:${contentDoc.cache[cached]}`);
+		window.cacheHandles.push(cachedHandle);
+	}
 }
 
 function setupAutomergeObject() {
@@ -259,48 +256,45 @@ function setupAutomergeObject() {
 }
 
 
-async function setupWebstrates(handle) {
-		handle.doc().then((doc) => {
-			_automerge.contentDoc = doc;
+async function setupWebstrates() {
+	let contentDoc = automerge.contentDoc;
+	coreOpApplier.listenForOps();
+	coreEvents.triggerEvent('receivedDocument', contentDoc, { static: false });
+	corePopulator.populate(coreDOM.externalDocument, contentDoc).then(async => {
+		coreMutation.emitMutationsFrom(coreDOM.externalDocument);
+		coreOpCreator.emitOpsFromMutations();
+		coreDocument.subscribeToOps();
+		const targetElement = coreDOM.externalDocument.childNodes[0];
+		coreOpApplier.setRootElement(targetElement);
 
-			coreOpApplier.listenForOps();
-			coreEvents.triggerEvent('receivedDocument', doc, { static: false });
-			corePopulator.populate(coreDOM.externalDocument, doc).then(async => {
-				coreMutation.emitMutationsFrom(coreDOM.externalDocument);
-				coreOpCreator.emitOpsFromMutations();
-				coreDocument.subscribeToOps();
-				const targetElement = coreDOM.externalDocument.childNodes[0];
-				coreOpApplier.setRootElement(targetElement);
-
-				handle.on( 'change', (change) => {
-					if (!window.suppressChanges) {
-						let patches = change.patches;
-						coreDocument.handlePatches(patches);
-					}
-					_automerge.contentDoc = change.doc;
-				});
-
-				// Ephemeral messages might be sent multiple times, so we need to deduplicate them.
-				let messageMap = new Map();
-				automerge.rootHandle.on('ephemeral-message', (messageObj) => {
-					let message = messageObj.message;
-					if (!message.uuid) return;
-					if (!messageMap.has(message.uuid)) {
-						coreEvents.triggerEvent('message', message, messageObj.senderId);
-						messageMap.set(message.uuid, Date.now());
-					}
-				});
-				// We clear out seen messages every 10 seconds.
-				setInterval(() => {
-					let now = Date.now();
-					for (let [uuid, timestamp] of messageMap) {
-						if (now - timestamp > 10000) {
-							messageMap.delete(uuid);
-						}
-					}
-				}, 10000);
-			})
+		automerge.contentHandle.on( 'change', (change) => {
+			if (!window.suppressChanges) {
+				let patches = change.patches;
+				coreDocument.handlePatches(patches);
+			}
+			_automerge.contentDoc = change.doc;
 		});
+
+		// Ephemeral messages might be sent multiple times, so we need to deduplicate them.
+		let messageMap = new Map();
+		automerge.rootHandle.on('ephemeral-message', (messageObj) => {
+			let message = messageObj.message;
+			if (!message.uuid) return;
+			if (!messageMap.has(message.uuid)) {
+				coreEvents.triggerEvent('message', message, messageObj.senderId);
+				messageMap.set(message.uuid, Date.now());
+			}
+		});
+		// We clear out seen messages every 10 seconds.
+		setInterval(() => {
+			let now = Date.now();
+			for (let [uuid, timestamp] of messageMap) {
+				if (now - timestamp > 10000) {
+					messageMap.delete(uuid);
+				}
+			}
+		}, 10000);
+	})
 }
 
 function generateLoadingPage() {
