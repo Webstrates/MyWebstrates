@@ -66,12 +66,13 @@ Object.defineProperty(globalObject.publicObject, 'restore', {
  * @param options
  * @returns {Promise<*>}
  */
-versioningModule.copy = async (handle, repo, options = {local: false, version: undefined}) => {
-	let sourceDoc;
+versioningModule.copy = async (options = {local: false, version: undefined}) => {
+	let sourceDoc = automerge.contentDoc;
+
 	if (options.version) {
 		// We have to create a new source doc from the previous version
-		const diffFromNewToOld = await versioningModule.diffFromNewToOld(handle, options.version);
-		const currentDoc = await handle.doc();
+		const diffFromNewToOld = await versioningModule.diffFromNewToOld(automerge.contentHandle, options.version);
+		const currentDoc = await automerge.contentHandle.doc();
 		sourceDoc = A.clone(currentDoc);
 		for (const diffPatch of diffFromNewToOld) {
 			sourceDoc = A.change(sourceDoc, doc => {
@@ -79,19 +80,25 @@ versioningModule.copy = async (handle, repo, options = {local: false, version: u
 			});
 		}
 	} else {
-		sourceDoc = await handle.doc();
+		sourceDoc = await automerge.contentHandle.doc();
 	}
-	let newDocHandle = repo.create();
-	await newDocHandle.change(doc => {
+	let newRootHandle = automerge.repo.create();
+	let newContentHandle = automerge.repo.create();
+	await newContentHandle.change(doc => {
 		// Copy over all properties from the source doc
 		for (const key in sourceDoc) {
 			doc[key] = structuredClone(sourceDoc[key]);
 		}
-		if (options.local && doc.meta) {
-			doc.meta.federations = [];
-		}
 	});
-	return newDocHandle;
+	await newRootHandle.change(doc => {
+		doc.content = newContentHandle.documentId;
+		let meta = JSON.parse(JSON.stringify(automerge.rootDoc.meta));
+		if (options.local) {
+			meta.federations = [];
+		}
+		doc.meta = meta;
+	});
+	return newRootHandle;
 }
 
 /**
@@ -102,7 +109,7 @@ versioningModule.copy = async (handle, repo, options = {local: false, version: u
  */
 Object.defineProperty(globalObject.publicObject, 'copy', {
 		value: async (options = {local: false, version: undefined, openInNewTab: true}) => {
-			let newDocHandle = await versioningModule.copy(automerge.contentHandle, automerge.repo, options);
+			let newDocHandle = await versioningModule.copy(options);
 			if (options.openInNewTab) {
 				await new Promise(r => setTimeout(r, 500));
 				window.open(`/s/${newDocHandle.documentId}/`, '_blank');
