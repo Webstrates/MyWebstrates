@@ -37,6 +37,11 @@ Object.defineProperty(globalObject.publicObject, 'migrate', {
 
 async function migrate() {
 	// Migrate from old to new version
+	let userConfirmed = confirm("You are about to migrate this strate, are you sure you want to continue?");
+	if (!userConfirmed) {
+		console.log("Aborted migration");
+		return;
+	}
 	let contentHandle = await automerge.repo.create();
 	if (automerge.rootDoc.content) {
 		console.warn("Webstrate already migrated, aborting");
@@ -56,7 +61,7 @@ async function migrate() {
 		delete d.dom;
 		d.meta.migrated = {ts: Date.now(), heads: automerge.rootHandle.heads()};
 	});
-	alert("Migration complete. Please reload the page to continue");
+	alert("Migration complete. Please wait 30 seconds and then reload.");
 }
 
 
