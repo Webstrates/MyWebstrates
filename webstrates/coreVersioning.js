@@ -175,8 +175,13 @@ Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
 		let otherStrateHandle = automerge.repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
-		let contentDoc = otherStrateDoc.content;
-		automerge.contentHandle.merge(otherStrateHandle);
+		if (automerge.rootDoc.content) {
+			let otherStrateContentDocId = otherStrateDoc.content;
+			let otherStrateContentHandle = automerge.repo.find(`automerge:${otherStrateContentDocId}`);
+			automerge.contentHandle.merge(otherStrateContentHandle);
+		} else {
+			automerge.rootHandle.merge(otherStrateHandle);
+		}
 	}
 });
 
