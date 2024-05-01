@@ -133,3 +133,6 @@ dist
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/vcs.xml
 /yarn.lock
+
+# macOS files
+.DS_Store
