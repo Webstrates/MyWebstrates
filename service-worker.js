@@ -84,25 +84,20 @@ self.addEventListener("message", async (event) => {
 	}
 });
 
-let syncServers = [];
-function addSyncServer(url) {
-	return new Promise((resolve, reject) => {
-		repo.then((repo) => {
-			if (!syncServers.includes(url)) {
-				let clientAdapter = new BrowserWebSocketClientAdapter(url)
-				repo.networkSubsystem.addNetworkAdapter(clientAdapter);
-				syncServers.push(url);
-				clientAdapter.on('ready', (p) => {
-					resolve();
-				});
-			} else {
+const syncServers = [];
+async function addSyncServer(url) {
+	if (!syncServers.includes(url)) {
+		const clientAdapter = new BrowserWebSocketClientAdapter(url);
+		(await repo).networkSubsystem.addNetworkAdapter(clientAdapter);
+		await new Promise((resolve) => {
+			clientAdapter.on('peer-candidate', () => {
 				resolve();
-			}
+			});
 		});
-	});
+		syncServers.push(url);
+	}
 }
 self.addSyncServer = addSyncServer
-
 
 async function clearOldCaches() {
 	const cacheWhitelist = [CACHE_NAME]
