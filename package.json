@@ -5,7 +5,7 @@
 	"scripts": {
 		"dev": "vite dev --port 3333",
 		"build": "vite build && vite -c vite_sw.config.ts build",
-		"watch": "concurrently \"vite build --watch\" \"vite -c vite_sw.config.ts buid --watch\"",
+		"watch": "concurrently \"vite build --watch\" \"vite -c vite_sw.config.ts build --watch\"",
 		"test": "vitest"
 	},
 	"devDependencies": {
@@ -24,6 +24,7 @@
 		"@automerge/automerge-repo-storage-indexeddb": "^1.1.9",
 		"@onsetsoftware/automerge-patcher": "^0.10.0",
 		"@zip.js/zip.js": "^2.7.35",
+		"concurrently": "^8.2.2",
 		"diff-match-patch": "^1.0.5",
 		"es-module-shims": "^1.8.0",
 		"html5-qrcode": "^2.3.8",
