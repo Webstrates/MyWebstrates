@@ -4,8 +4,8 @@
 	"version": "0.0.0",
 	"scripts": {
 		"dev": "vite dev --port 3333",
-		"build": "vite build",
-		"watch": "vite build --watch",
+		"build": "vite build && vite -c vite_sw.config.ts build",
+		"watch": "concurrently \"vite build --watch\" \"vite -c vite_sw.config.ts buid --watch\"",
 		"test": "vitest"
 	},
 	"devDependencies": {
@@ -32,7 +32,8 @@
 		"mime": "^4.0.1",
 		"parse5": "^7.1.2",
 		"setimmediate": "^1.0.5",
-		"verbal-expressions": "^1.0.2"
+		"verbal-expressions": "^1.0.2",
+		"vite-plugin-replace": "^0.1.1"
 	},
 	"resolutions": {
 		"@automerge/automerge-wasm": "file:./automerge-wasm"
