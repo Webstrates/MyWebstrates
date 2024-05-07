@@ -16,12 +16,12 @@
 		"vitest": "^1.1.1"
 	},
 	"dependencies": {
-		"@automerge/automerge": "^2.2.0",
-		"@automerge/automerge-repo": "^1.1.9",
-		"@automerge/automerge-repo-network-broadcastchannel": "^1.1.9",
-		"@automerge/automerge-repo-network-messagechannel": "^1.1.9",
-		"@automerge/automerge-repo-network-websocket": "^1.1.9",
-		"@automerge/automerge-repo-storage-indexeddb": "^1.1.9",
+		"@automerge/automerge": "^2.2.1",
+		"@automerge/automerge-repo": "^1.1.11",
+		"@automerge/automerge-repo-network-broadcastchannel": "^1.1.11",
+		"@automerge/automerge-repo-network-messagechannel": "^1.1.11",
+		"@automerge/automerge-repo-network-websocket": "^1.1.11",
+		"@automerge/automerge-repo-storage-indexeddb": "^1.1.11",
 		"@onsetsoftware/automerge-patcher": "^0.10.0",
 		"@zip.js/zip.js": "^2.7.35",
 		"concurrently": "^8.2.2",
