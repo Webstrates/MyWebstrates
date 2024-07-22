@@ -285,16 +285,19 @@ async function handleAssetMatch(event, assetMatch) {
 		isZipDir = true;
 		filename = path[0].split('?')[0];
 	} else if (path.length > 1 && path[0].endsWith(".zip")) {
-		isZip = true;
-		filename = path[0];
-		zipPath = path.slice(1).join('/');
+			isZip = true;
+			filename = path[0];
+			zipPath = path.slice(1).join('/');
 	}
-
 	const clientsList = await clients.matchAll({ includeUncontrolled: true, type: 'window' });
 	const targetClient = clientsList.find(client => client.url.includes(docId));
 	const messageChannel = new MessageChannel();
 	let getAsset = function() {
 		return new Promise((resolve, reject) => {
+			if (!targetClient) {
+				resolve(null);
+				return;
+			}
 			targetClient.postMessage({
 				type: 'ASSET_REQUEST',
 				fileName: filename
@@ -324,7 +327,7 @@ async function handleAssetMatch(event, assetMatch) {
 		assetId = asset.id;
 	}
 	if (assetId) {
-		let assetHandle = (await repo).find(`automerge:${asset.id}`);
+		let assetHandle = (await repo).find(`automerge:${assetId}`);
 		let assetDoc = await assetHandle.doc();
 		const uint8Array = assetDoc.data;
 		if (isZip && isZipDir) {
@@ -343,7 +346,7 @@ async function handleAssetMatch(event, assetMatch) {
 			})
 		}
 		if (isZip) {
-			let blob = new Blob([uint8Array], { type: assetDoc.mimetype });
+			let blob = new Blob([uint8Array], { type: assetDoc.mimeType });
 			let blobReader = new BlobReader(blob);
 			let zip = new ZipReader(blobReader);
 			let blobWriter = new BlobWriter();
@@ -353,7 +356,10 @@ async function handleAssetMatch(event, assetMatch) {
 				const blob = await entry.getData(blobWriter);
 				return new Response(blob,{
 					status: 200,
-					statusText: 'OK'
+					statusText: 'OK',
+					headers: {
+						'Content-Type': assetDoc.mimeType
+					}
 				})
 			} else {
 				return new Response("No such asset", {
@@ -365,7 +371,10 @@ async function handleAssetMatch(event, assetMatch) {
 		const blob = new Blob([uint8Array], { type: assetDoc.mimeType });
 		return new Response(blob,{
 			status: 200,
-			statusText: 'OK'
+			statusText: 'OK',
+			headers: {
+				'Content-Type': assetDoc.mimeType || assetDoc.mimetype
+			}
 		})
 	} else {
 		return new Response("No such asset", {
