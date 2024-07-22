@@ -26,6 +26,7 @@ coreUtilsModule.getLocationObject = () => {
 	const pathRegex = /^\/s\/([A-Z0-9._-]+)(?:@([A-Z0-9.-:]+))?\/?(?:([A-Z0-9_-]+)\/)?/i.exec(pathname);
 	if (!pathRegex) return null;
 	let [ , webstrateId, remoteHost, tagOrVersion] = pathRegex;
+	if(webstrateId) webstrateId = webstrateId.split('-').pop(); // Remove the description part of the URL
 	if(remoteHost) remoteHost = remoteHost.replace('/', '');
 
 	const parameters = {};

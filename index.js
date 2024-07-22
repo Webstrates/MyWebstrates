@@ -153,9 +153,9 @@ self.Automerge = Automerge;
 self.AutomergeCore = AutomergeCore;
 setupMessageChannel(repo);
 
-let match = window.location.pathname.match('/s/([a-zA-Z0-9]+)/?(.+)?');
+let match = window.location.pathname.match('/s/(.+)/?(.+)?');
 if (match) {
-	let documentId = match[1];
+	let documentId = coreUtils.getLocationObject().webstrateId;
 	let rootHandle;
 	document.body.innerHTML = generateLoadingPage();
 	try {
@@ -194,7 +194,7 @@ if (match) {
 	await setupAssetHandles();
 	await setupCacheHandles();
 	await setupWebstrates();
-} else if ((window.location.pathname + window.location.search).match('/\?s/([a-zA-Z0-9]+)/?(.+)?')) {
+} else if ((window.location.pathname + window.location.search).match('/\?s/(.+)/?(.+)?')) {
 	setTimeout(() => {
 		window.location = window.location.pathname + window.location.search.slice(1);
 	}, 500);

@@ -12,7 +12,7 @@ import { md5 } from 'js-md5';
 
 const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v130";
+const CACHE_NAME = "v142";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -376,7 +376,7 @@ async function handleAssetMatch(event, assetMatch) {
 }
 
 async function handleStrateMatch(event, match) {
-	let documentId = match[1];
+	let documentId = match[1].split("-").pop(); // Ignore anything before the last dash
 	let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 	if (syncServer) await addSyncServer(`wss://${syncServer}`);
 	let rootDocHandle = (await repo).find(`automerge:${documentId}`);
