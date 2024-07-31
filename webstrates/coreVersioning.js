@@ -15,8 +15,12 @@ Object.defineProperty(globalObject.publicObject, 'version', {
  * Get the version hash of the current version.
  */
 Object.defineProperty(globalObject.publicObject, 'versionHash', {
-	get: () => Automerge.getHeads(automerge.contentDoc)[0],
+	get: () => versioningModule.currentVersionHash(),
 });
+
+versioningModule.currentVersionHash = () => {
+	return AutomergeCore.getHeads(automerge.contentDoc)[0];
+}
 
 /**
  * Get the list of patches from the current version to the previous given version.
@@ -49,6 +53,15 @@ versioningModule.restore = async (handle, version) => {
 		});
 	}
 }
+
+Object.defineProperty(globalObject.publicObject, 'tag', {
+	value: async (tag) => {
+		await automerge.rootHandle.change(doc => {
+			if (!doc.meta.tags) doc.meta.tags = {};
+			doc.meta.tags[tag] = versioningModule.currentVersionHash();
+		});
+	}
+});
 
 /**
  * Restore the strate to a previous version.
