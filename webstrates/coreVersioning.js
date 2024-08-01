@@ -1,4 +1,4 @@
-import * as A from "@automerge/automerge/next";
+import * as A from "@automerge/automerge/slim";
 import { patch } from "@onsetsoftware/automerge-patcher";
 import { globalObject } from './globalObject.js';
 

@@ -1,4 +1,4 @@
-import {cbor as cborHelpers, NetworkAdapter} from "@automerge/automerge-repo"
+import {cbor as cborHelpers, NetworkAdapter} from "@automerge/automerge-repo/slim"
 
 const { encode, decode } = cborHelpers
 

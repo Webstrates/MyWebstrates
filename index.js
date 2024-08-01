@@ -1,6 +1,6 @@
-import * as AutomergeWasm from "@automerge/automerge-wasm"
-import * as AutomergeCore from "@automerge/automerge"
-import * as Automerge from "@automerge/automerge-repo"
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
+import * as AutomergeCore from "@automerge/automerge/slim"
+import * as Automerge from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
@@ -24,7 +24,6 @@ import {corePathTree} from "./webstrates/corePathTree.js";
 import {coreJsonML} from "./webstrates/coreJsonML";
 import {coreFederation} from "./webstrates/coreFederation";
 import * as setimmediate from "setimmediate";
-
 import {globalObject} from "./webstrates/globalObject.js";
 import {loadedEvent} from "./webstrates/loadedEvent.js";
 import {protectedMode} from "./webstrates/protectedMode";
@@ -87,7 +86,7 @@ async function installServiceWorker() {
 						resolve();
 					},
 					(error) => {
-						console.error(`Service worker registration failed: ${error}`);
+						console.error(`Service worker registration failed: ${error}`, error);
 						reject(error);
 					},
 				);
@@ -97,6 +96,9 @@ async function installServiceWorker() {
 }
 
 async function initializeRepo() {
+	console.log("Init wasm");
+	await AutomergeCore.initializeBase64Wasm(automergeWasmBase64);
+	console.log("Init wasm complete");
 	let peerId = "mywebstrates-client-" + Math.round(Math.random() * 1000000);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
@@ -106,8 +108,6 @@ async function initializeRepo() {
 	});
 	coreEvents.triggerEvent('peerIdReceived', {id: peerId});
 
-	await AutomergeWasm.promise
-	//Automerge.use(AutomergeWasm)
 	let remoteHost = coreUtils.getLocationObject().remoteHost;
 	if (remoteHost) {
 		coreFederation.addSyncServerToRepo(`wss://${remoteHost}`, repo);

@@ -1,7 +1,7 @@
 import "./qrcode.js";
 import {Html5QrcodeScanner} from "html5-qrcode";
-import { next as Automerge } from "@automerge/automerge"
-import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo"
+import { next as Automerge } from "@automerge/automerge/slim"
+import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 import {WebRTCNetworkAdapter} from "./WebRTCNetworkAdapter";

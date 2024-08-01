@@ -1,6 +1,6 @@
-import * as AutomergeWasm from "@automerge/automerge-wasm"
-import * as Automerge from "@automerge/automerge-repo"
-import * as AutomergeCore from "@automerge/automerge"
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
+import * as AutomergeCore from "@automerge/automerge/slim"
+import * as Automerge from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
@@ -9,6 +9,7 @@ import mime from 'mime';
 import * as parse5 from "parse5";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
+try {
 
 const Repo = Automerge.Repo;
 
@@ -18,8 +19,6 @@ const FILES_TO_CACHE = [
 	"es-module-shims.js",
 	"es-module-shims.js.map",
 	"index.html",
-	"index.js",
-	"index.js.map",
 	"P2PSetup.js",
 	"P2PSetup.js.map",
 	"main.js",
@@ -34,6 +33,7 @@ const stratesWithCache = new Map();
 
 async function initializeRepo() {
 	console.log("Initializing repo in service worker");
+	await AutomergeCore.initializeBase64Wasm(automergeWasmBase64);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
 		network: [],
@@ -41,8 +41,8 @@ async function initializeRepo() {
 		sharePolicy: async (peerId) => peerId.includes("p2p"),
 	})
 
-	await AutomergeWasm.promise
 
+	console.log("Completed repo in service worker");
 	return repo
 }
 
@@ -314,7 +314,7 @@ async function handleAssetMatch(event, assetMatch) {
 	if (!asset) {
 		let handle = (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
-		if (doc.content) {
+		if (doc.content) {inininini
 			handle = (await repo).find(`automerge:${doc.content}`);
 			doc = await handle.doc();
 		}
@@ -415,7 +415,6 @@ async function handleStrateMatch(event, match) {
 	<head>
 		<script type="importmap">${importMap}</script>
 		<script type="module" crossorigin src="../../main.js"></script>
-		<link rel="modulepreload" crossorigin href="../../index.js">
 		
 
 	</head>
@@ -567,3 +566,7 @@ const getDocId = async (key) => {
 		};
 	});
 };
+} catch (ex){
+    console.log("SW error", ex);
+
+}

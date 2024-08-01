@@ -1,5 +1,7 @@
-import { resolve } from "path"
-import { defineConfig } from "vite"
+import { resolve } from "path";
+import { defineConfig } from "vite";
+import { replaceCodePlugin } from "vite-plugin-replace";
+
 
 export default defineConfig({
     base: "./",
@@ -23,6 +25,16 @@ export default defineConfig({
     optimizeDeps: {
         esbuildOptions: { target: "esnext" },
     },
-    plugins: [],
+    plugins: [
+    replaceCodePlugin({
+      replacements: [
+        { /** Fix for @onsetsoftware/automerge-patcher (or anyone really) importing the fullfat automerge stack when it shouldn't **/
+          from: "from \"@automerge/automerge\";",
+          to: "from \"@automerge/automerge/slim\";",
+        },
+      ],
+    }),
+    ],
+
     define: { "process.env": {} },
 })

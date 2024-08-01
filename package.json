@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "vite dev --port 3333",
 		"build": "vite build && vite -c vite_sw.config.ts build",
+		"build-sw": "vite -c vite_sw.config.ts build",
 		"watch": "concurrently \"vite build --watch\" \"vite -c vite_sw.config.ts build --watch\"",
 		"test": "vitest"
 	},
@@ -35,8 +36,5 @@
 		"setimmediate": "^1.0.5",
 		"verbal-expressions": "^1.0.2",
 		"vite-plugin-replace": "^0.1.1"
-	},
-	"resolutions": {
-		"@automerge/automerge-wasm": "file:./automerge-wasm"
 	}
 }

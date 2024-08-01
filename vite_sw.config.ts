@@ -27,11 +27,7 @@ export default defineConfig({
     plugins: [
     replaceCodePlugin({
       replacements: [
-	{ 
-	    from: "import url from \"./automerge_wasm_bg.wasm?url\";",
-	    to: "const url = location.origin+'/automerge_wasm_bg.wasm';"
-	},
-        {
+        { /** Fix Firefox not supporting modules in SW **/
           from: "import.meta.url",
           to: "location.origin",
         },
