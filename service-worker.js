@@ -19,6 +19,8 @@ const FILES_TO_CACHE = [
 	"es-module-shims.js",
 	"es-module-shims.js.map",
 	"index.html",
+	"index.js",
+	"index.js.map",
 	"P2PSetup.js",
 	"P2PSetup.js.map",
 	"main.js",
