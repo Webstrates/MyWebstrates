@@ -275,7 +275,7 @@ async function handleNewMatch(event, newMatch) {
 }
 
 async function handleAssetMatch(event, assetMatch) {
-	let docId = assetMatch[1].split("@")[0];
+	let docId = assetMatch[1].split("@")[0].split("-").pop();
 	let filename = decodeURIComponent(assetMatch[2]);
 	// Check if it is a zip file
 	let path = filename.split('/');
