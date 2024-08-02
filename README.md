@@ -2,8 +2,10 @@
 
 This is the code repo for MyWebstrates which will be presented at [UIST 2024](https://uist.acm.org/2024/) in Pittsburgh Oct. 13-16 2024. Documentation will be released at the latest for the conference. 
 
-# Paper
+# Paper & Video
 [Research paper (pdf)](https://pure.au.dk/admin/files/385885602/MyWebstrates-UIST2024.pdf)
+
+[![Watch the accompanying video on YouTube](https://img.youtube.com/vi/uHVsZs4HfAw/0.jpg)](https://www.youtube.com/watch?v=uHVsZs4HfAw)
 
 # Public hosting
 There's a public hosting of MyWebstrates at [my.webstrates.net](https://my.webstrates.net).
