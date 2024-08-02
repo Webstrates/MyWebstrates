@@ -316,7 +316,7 @@ async function handleAssetMatch(event, assetMatch) {
 	if (!asset) {
 		let handle = (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
-		if (doc.content) {inininini
+		if (doc.content) {
 			handle = (await repo).find(`automerge:${doc.content}`);
 			doc = await handle.doc();
 		}
