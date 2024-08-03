@@ -58,10 +58,54 @@ Object.defineProperty(globalObject.publicObject, 'tag', {
 	value: async (tag) => {
 		await automerge.rootHandle.change(doc => {
 			if (!doc.meta.tags) doc.meta.tags = {};
-			doc.meta.tags[tag] = versioningModule.currentVersionHash();
+			doc.meta.tags[tag] = {
+				contentDocId: automerge.contentHandle.documentId,
+				versionHash: versioningModule.currentVersionHash()
+			};
 		});
 	}
 });
+
+/**
+ * Makes a new flat copy of the content document and stores a reference to the old one.
+ */
+Object.defineProperty(globalObject.publicObject, 'archiveHistory', {
+	get: () => archiveHistory,
+	set: () => { throw new Error('Internal archiveHistory method should not be modified'); },
+	enumerable: false
+});
+
+async function archiveHistory() {
+	let userConfirmed = confirm("You are about to archive the history of this strate. This is an experimental feature, are you sure you want to continue?\nThe page will reload five seconds after archiving.");
+	if (!userConfirmed) {
+		console.log("Archiving aborted");
+		return;
+	}
+	let newContentHandle = automerge.repo.create();
+	let currentContentDoc = await automerge.contentHandle.doc();
+	await newContentHandle.change(doc => {
+		// Copy over all properties from the source doc
+		for (const key in currentContentDoc) {
+			doc[key] = structuredClone(currentContentDoc[key]);
+		}
+	});
+	let rootDocHeads = AutomergeCore.getHeads(await automerge.rootHandle.doc());
+	let contentDocHeads = AutomergeCore.getHeads(await newContentHandle.doc());
+	await automerge.rootHandle.change(doc => {
+		if (!doc.meta.archive) doc.meta.archive = [];
+		doc.meta.archive.push({
+			contentDoc: automerge.contentHandle.documentId,
+			contentDocHeads: contentDocHeads,
+			rootDocHeads: rootDocHeads,
+			timestamp: Date.now(),
+		});
+		doc.content = newContentHandle.documentId;
+	});
+	console.log("Reloading page in 5 seconds");
+	setTimeout(() => {
+		location.reload();
+	}, 5000);
+}
 
 /**
  * Restore the strate to a previous version.
