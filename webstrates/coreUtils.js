@@ -615,4 +615,13 @@ coreUtilsModule.generateOpsFromAutomergePatch = (patch) => {
 	}
 }
 
+coreUtilsModule.isValidUrl = (url) => {
+		try {
+			new URL(url);
+			return true;
+		} catch (err) {
+			return false;
+	}
+}
+
 export const coreUtils = coreUtilsModule;

@@ -13,7 +13,7 @@ try {
 
 const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v149";
+const CACHE_NAME = "v154";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -78,7 +78,7 @@ self.addEventListener("message", async (event) => {
 		)
 	} else if (event.data && event.data.type === "FEDERATE") {
 		const url = event.data.host
-		addSyncServer(`wss://${url}`);
+		addSyncServer(url);
 	}
 });
 
