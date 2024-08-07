@@ -1,8 +1,12 @@
 import {BrowserWebSocketClientAdapter} from "@automerge/automerge-repo-network-websocket";
 import {globalObject} from "./globalObject";
 import {coreUtils} from "./coreUtils";
+import { coreEvents } from './coreEvents.js';
 
 const coreFederationModule = {};
+
+globalObject.createEvent('syncServerAdded');
+globalObject.createEvent('syncServerRemoved');
 
 globalObject.publicObject.addSyncServer = (host) => {
 	let uri;
@@ -12,9 +16,7 @@ globalObject.publicObject.addSyncServer = (host) => {
 		if (doc.meta.federations.includes(host)) return;
 		doc.meta.federations.push(host);
 	});
-	const messageChannel = new MessageChannel();
-	navigator.serviceWorker.controller.postMessage({ type: "FEDERATE", host: uri }, [messageChannel.port2])
-	return coreFederationModule.addSyncServerToRepo(uri, automerge.repo);
+	tellServiceWorkerToFederate(uri);
 }
 
 globalObject.publicObject.removeSyncServer = (host) => {
@@ -28,15 +30,25 @@ globalObject.publicObject.removeSyncServer = (host) => {
 	return coreFederationModule.removeSyncServerFromRepo(uri, automerge.repo);
 }
 
+globalObject.publicObject.getSyncServers = () => {
+	return coreFederationModule.getSyncServers();
+}
+
+function tellServiceWorkerToFederate(uri) {
+	const messageChannel = new MessageChannel();
+	navigator.serviceWorker.controller.postMessage({ type: "FEDERATE", host: uri }, [messageChannel.port2])
+}
+
 const syncServers = [];
-coreFederationModule.addSyncServerToRepo = function(url, repo) {
-	console.log("Adding sync server", url);
+coreFederationModule.addSyncServerToRepo = function(uri, repo) {
+	console.log("Connecting to sync server:", uri)
 	return new Promise((resolve, reject) => {
-		if (!syncServers.includes(url)) {
-			let clientAdapter = new BrowserWebSocketClientAdapter(url)
+		if (!syncServers.includes(uri)) {
+			let clientAdapter = new BrowserWebSocketClientAdapter(uri)
 			repo.networkSubsystem.addNetworkAdapter(clientAdapter);
-			syncServers.push(url);
+			syncServers.push(uri);
 			clientAdapter.on('ready', (p) => {
+				globalObject.triggerEvent('syncServerAdded', uri);
 				resolve();
 			});
 		} else {
@@ -45,10 +57,44 @@ coreFederationModule.addSyncServerToRepo = function(url, repo) {
 	});
 }
 
+coreEvents.addEventListener('receivedDocument', async () => {
+	let rootDoc = await automerge.rootHandle.doc();
+	for (let host of rootDoc.meta.federations) {
+		let uri;
+		[host, uri] = cleanHost(host);
+		await coreFederationModule.addSyncServerToRepo(uri, automerge.repo);
+	}
+	automerge.rootHandle.on('change', async (change) => {
+		for (let p of change.patches) {
+			if (p.action === 'splice' && p.path.join(".").startsWith('meta.federations')) {
+				let host = p.value;
+				let uri;
+				[host, uri] = cleanHost(host);
+				coreFederationModule.addSyncServerToRepo(uri, automerge.repo);
+			}
+			if (p.action === 'put' && p.path.join(".").startsWith('meta.federations')) {
+				let rootDoc = await automerge.rootHandle.doc();
+				let diff = syncServers.filter(x => !rootDoc.meta.federations.includes(x.replace(/(^\w+:|^)\/\//, '')));
+				if (diff.length > 0) {
+					for (let uri of diff) {
+						globalObject.triggerEvent('syncServerRemoved', uri);
+					}
+				}
+			}
+		}
+	});
+});
+
+
+coreFederationModule.getSyncServers = function() {
+	return syncServers;
+}
+
 coreFederationModule.removeSyncServerFromRepo = function(uri, repo) {
 	return new Promise((resolve, reject) => {
 		if (syncServers.includes(uri)) {
 			syncServers.splice(syncServers.indexOf(uri), 1);
+			coreEvents.triggerEvent('syncServerRemoved', uri);
 			resolve();
 		} else {
 			resolve();

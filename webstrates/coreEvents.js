@@ -131,5 +131,7 @@ coreEventsModule.createEvent('peerListReceived');
 coreEventsModule.createEvent('peerConnected');
 coreEventsModule.createEvent('peerDisconnected');
 coreEventsModule.createEvent('userObjectAdded');
+coreEventsModule.createEvent('syncServerAdded');
+coreEventsModule.createEvent('syncServerRemoved');
 
 export const coreEvents = coreEventsModule;
