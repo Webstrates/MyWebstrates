@@ -94,7 +94,7 @@ coreFederationModule.removeSyncServerFromRepo = function(uri, repo) {
 	return new Promise((resolve, reject) => {
 		if (syncServers.includes(uri)) {
 			syncServers.splice(syncServers.indexOf(uri), 1);
-			coreEvents.triggerEvent('syncServerRemoved', uri);
+			globalObject.triggerEvent('syncServerRemoved', uri);
 			resolve();
 		} else {
 			resolve();
