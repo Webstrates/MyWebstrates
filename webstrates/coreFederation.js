@@ -87,7 +87,7 @@ coreEvents.addEventListener('receivedDocument', async () => {
 
 
 coreFederationModule.getSyncServers = function() {
-	return syncServers;
+	return syncServers.map(s => s.replace('wss://', ''));
 }
 
 coreFederationModule.removeSyncServerFromRepo = function(uri, repo) {
