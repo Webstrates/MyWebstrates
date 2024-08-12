@@ -1,5 +1,6 @@
 import "./qrcode.js";
 import {Html5QrcodeScanner} from "html5-qrcode";
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
 import { next as Automerge } from "@automerge/automerge/slim"
 import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
@@ -8,15 +9,17 @@ import {WebRTCNetworkAdapter} from "./WebRTCNetworkAdapter";
 
 await import("es-module-shims")
 
+await Automerge.initializeBase64Wasm(automergeWasmBase64);
+
 let connection;
 const messageChannel = new MessageChannel()
 let repo = new Repo({
 	storage: new IndexedDBStorageAdapter(),
-	network: [new MessageChannelNetworkAdapter(messageChannel.port1)],
 	peerId: "p2p-" + Math.round(Math.random() * 1000000),
 	sharePolicy: async (peerId) => true,
 });
-navigator.serviceWorker.controller.postMessage({ type: "INIT_PORT" }, [messageChannel.port2])
+repo.networkSubsystem.addNetworkAdapter(new MessageChannelNetworkAdapter(messageChannel.port1))
+navigator.serviceWorker.controller.postMessage({type: "INIT_PORT"}, [messageChannel.port2])
 window.repo = repo;
 
 function createChallenge(){
@@ -205,7 +208,6 @@ document.getElementById("receiver-input").addEventListener("click", async ()=>{
 	let target = document.getElementById("qr-response");
 	let code = await createResponse({type:"offer", sdp:e+"\n"});
 	await navigator.clipboard.writeText(code.sdp);
-	console.log("Challenge:", code);
 	new QRCode(target, {
 		text: code.sdp,
 		width: 2600,

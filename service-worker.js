@@ -13,7 +13,7 @@ try {
 
 const Repo = Automerge.Repo;
 
-const CACHE_NAME = "v178";
+const CACHE_NAME = "v188";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -72,7 +72,9 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("message", async (event) => {
 	if (event.data && event.data.type === "INIT_PORT") {
+		console.log(event);
 		const clientPort = event.ports[0]
+			console.log(clientPort)
 		;(await repo).networkSubsystem.addNetworkAdapter(
 			new MessageChannelNetworkAdapter(clientPort, { useWeakRef: true })
 		)

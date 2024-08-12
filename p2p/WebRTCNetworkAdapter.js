@@ -9,17 +9,30 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 		this.channel = channel;
 		this.options = options;
 		this.chunkMap = new Map();
+		this.ready = false;
+		this.readyResolver = () => {};
+		this.readyPromise = new Promise(resolve => {
+			this.readyResolver = resolve
+		});
+
 		setInterval(() => {
 			this.send({'type': 'ping'});
 		}, 1000);
 
 	}
 
+	whenReady() {
+		return this.readyPromise;
+	}
+
 	connect(peerId, peerMetaData) {
 		this.peerId = peerId;
 		this.peerMetadata = peerMetaData;
+		this.ready = true;
+
 		this.channel.onmessage = (e) => {
 			const message = decode(new Uint8Array(e.data));
+			console.log("Got message", message);
 
 			if ("targetId" in message && message.targetId !== this.peerId) {
 				return
@@ -68,6 +81,7 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 								return;
 							}
 						}
+						console.log("Got message", message);
 						this.emit("message", {
 							...message,
 							data: new Uint8Array(data),
@@ -84,18 +98,29 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 		};
 		this.send(payload)
 
-		this.emit("ready", { network: this })
-
 		this.channel.onclose = (e) => {
 			console.log(e);
 		}
 	}
 
 	announceConnection(peerId, peerMetadata) {
+		this.forceReady();
 		this.emit("peer-candidate", { peerId, peerMetadata })
 	}
 
+	forceReady() {
+		if (!this.ready) {
+			this.ready = true;
+			if (this.readyResolver) this.readyResolver()
+		}
+	}
+
+	isReady() {
+		return this.ready;
+	}
+
 	send(message) {
+		console.log("Sending message", message)
 		let payloads = [];
 		if ("data" in message) {
 			let dataArray = Array.from(message.data);
@@ -160,6 +185,7 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 	}
 
 	disconnect() {
-
+		if (this.connection) this.connection.disconnect();
+		this.ready = false;
 	}
 }
