@@ -1,4 +1,3 @@
-import * as A from "@automerge/automerge/slim";
 import { patch } from "@onsetsoftware/automerge-patcher";
 import { globalObject } from './globalObject.js';
 
@@ -8,7 +7,7 @@ const versioningModule = {};
  * Get the current version number of the strate.
  */
 Object.defineProperty(globalObject.publicObject, 'version', {
-	get: () => Automerge.getAllChanges(automerge.contentDoc).length-1,
+	get: () => AutomergeCore.getAllChanges(automerge.contentDoc).length-1,
 });
 
 /**
@@ -30,18 +29,18 @@ versioningModule.currentVersionHash = () => {
  */
 versioningModule.diffFromNewToOld = async (handle, version) => {
 	let currentDoc = await handle.doc();
-	let allChanges = A.getAllChanges(currentDoc);
+	let allChanges = AutomergeCore.getAllChanges(currentDoc);
 	let oldHead;
 	if (typeof version === 'number') {
 		const versionIndex = version;
 		if (version >= allChanges.length || version < 1) {
 			throw new Error("Invalid version number");
 		}
-		oldHead = allChanges.map(c => A.decodeChange(c))[versionIndex].hash;
+		oldHead = allChanges.map(c => AutomergeCore.decodeChange(c))[versionIndex].hash;
 	} else if (typeof version === 'string') {
 		oldHead = version;
 	}
-	const diffFromNewToOld = A.diff(currentDoc, A.getHeads(currentDoc), [oldHead]);
+	const diffFromNewToOld = AutomergeCore.diff(currentDoc, AutomergeCore.getHeads(currentDoc), [oldHead]);
 	return diffFromNewToOld;
 }
 
@@ -130,9 +129,9 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 		// We have to create a new source doc from the previous version
 		const diffFromNewToOld = await versioningModule.diffFromNewToOld(automerge.contentHandle, options.version);
 		const currentDoc = await automerge.contentHandle.doc();
-		sourceDoc = A.clone(currentDoc);
+		sourceDoc = Automerge.clone(currentDoc);
 		for (const diffPatch of diffFromNewToOld) {
-			sourceDoc = A.change(sourceDoc, doc => {
+			sourceDoc = Automerge.change(sourceDoc, doc => {
 				patch(doc, diffPatch);
 			});
 		}

@@ -1,10 +1,12 @@
 import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
-import * as AutomergeCore from "@automerge/automerge/slim"
 import * as Automerge from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 await import("es-module-shims")
+
+window.Automerge = Automerge;
+window.AutomergeCore = Automerge.Automerge.next;
 
 const Repo = Automerge.Repo;
 const documentProxyObj = {};
@@ -96,9 +98,7 @@ async function installServiceWorker() {
 }
 
 async function initializeRepo() {
-	console.log("Init wasm");
-	await AutomergeCore.initializeBase64Wasm(automergeWasmBase64);
-	console.log("Init wasm complete");
+	await Automerge.initializeBase64Wasm(automergeWasmBase64);
 	let peerId = "mywebstrates-client-" + Math.round(Math.random() * 1000000);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
@@ -150,7 +150,6 @@ await installServiceWorker();
 const repo = await initializeRepo()
 _automerge.repo = repo;
 self.Automerge = Automerge;
-self.AutomergeCore = AutomergeCore;
 setupMessageChannel(repo);
 
 let match = window.location.pathname.match('/s/(.+)/?(.+)?');

@@ -1,11 +1,12 @@
 import "./qrcode.js";
 import {Html5QrcodeScanner} from "html5-qrcode";
 import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
-import { next as Automerge } from "@automerge/automerge/slim"
-import { Repo, isValidAutomergeUrl } from "@automerge/automerge-repo/slim"
+import * as Automerge from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
 import {WebRTCNetworkAdapter} from "./WebRTCNetworkAdapter";
+
+const Repo = Automerge.Repo;
 
 await import("es-module-shims")
 

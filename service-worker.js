@@ -1,6 +1,5 @@
 import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
-import * as AutomergeCore from "@automerge/automerge/slim"
-import * as Automerge from "@automerge/automerge-repo/slim"
+import * as AutomergeRepo from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
 import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-messagechannel"
@@ -11,9 +10,10 @@ import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 try {
 
-const Repo = Automerge.Repo;
+const Repo = AutomergeRepo.Repo;
+const Automerge = AutomergeRepo.Automerge.next;
 
-const CACHE_NAME = "v188";
+const CACHE_NAME = "v199";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -35,7 +35,8 @@ const stratesWithCache = new Map();
 
 async function initializeRepo() {
 	console.log("Initializing repo in service worker");
-	await AutomergeCore.initializeBase64Wasm(automergeWasmBase64);
+	await Automerge.initializeBase64Wasm(automergeWasmBase64);
+	await AutomergeRepo.initializeBase64Wasm(automergeWasmBase64);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
 		network: [],
@@ -53,7 +54,7 @@ const repo = initializeRepo()
 // put it on the global context for interactive use
 repo.then((r) => {
 	self.repo = r
-	self.Automerge = Automerge
+	self.Automerge = AutomergeRepo
 })
 
 const addResourcesToCache = async (resources) => {
@@ -72,9 +73,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("message", async (event) => {
 	if (event.data && event.data.type === "INIT_PORT") {
-		console.log(event);
 		const clientPort = event.ports[0]
-			console.log(clientPort)
 		;(await repo).networkSubsystem.addNetworkAdapter(
 			new MessageChannelNetworkAdapter(clientPort, { useWeakRef: true })
 		)
@@ -226,6 +225,7 @@ async function handleNewMatch(event, newMatch) {
 	let jsonML;
 	let assets = [];
 	if (newMatch) {
+		console.log("NEW MATCH")
 		let prototypeZipURL = newMatch[4];
 		if (prototypeZipURL) {
 			// read the zip file from the prototypeZipURL and extract the content of index.html in it if it exists
@@ -271,6 +271,7 @@ async function handleNewMatch(event, newMatch) {
 			d.content = contentHandle.documentId;
 		});
 		let id = rootHandle.documentId;
+		console.log(await rootHandle.doc(), await contentHandle.doc());
 		await new Promise(r => setTimeout(r, 500));
 		return Response.redirect(`/s/${id}/`);
 	}
@@ -397,11 +398,11 @@ async function handleStrateMatch(event, match) {
 	// To make it possible to import automerge and automerge-repo we need to add them to the importMap
 	// If a user imports them, we want to make sure they get the same instance as running in the client
 	let automergeRepoExports = '';
-	for (let key in Automerge) {
+	for (let key in AutomergeRepo) {
 		automergeRepoExports += `export const ${key} = Automerge.${key};\n`;
 	}
 	let automergeCoreExports = '';
-	for (let key in AutomergeCore) {
+	for (let key in Automerge) {
 		automergeCoreExports += `export const ${key} = AutomergeCore.${key};\n`;
 	}
 

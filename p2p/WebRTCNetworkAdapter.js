@@ -10,7 +10,9 @@ export class WebRTCNetworkAdapter extends NetworkAdapter {
 		this.options = options;
 		this.chunkMap = new Map();
 		this.ready = false;
-		this.readyResolver = () => {};
+		this.readyResolver = () => {
+			console.warn("WebRTCNetworkAdapter readyResolver not set");
+		};
 		this.readyPromise = new Promise(resolve => {
 			this.readyResolver = resolve
 		});
