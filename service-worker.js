@@ -35,7 +35,6 @@ const stratesWithCache = new Map();
 
 async function initializeRepo() {
 	console.log("Initializing repo in service worker");
-	await Automerge.initializeBase64Wasm(automergeWasmBase64);
 	await AutomergeRepo.initializeBase64Wasm(automergeWasmBase64);
 	const repo = new Repo({
 		storage: new IndexedDBStorageAdapter(),
