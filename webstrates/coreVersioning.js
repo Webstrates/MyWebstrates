@@ -19,6 +19,21 @@ Object.defineProperty(globalObject.publicObject, 'version', {
 });
 
 /**
+ * Get tags.
+ */
+Object.defineProperty(globalObject.publicObject, 'tags', {
+	get: () => {
+		return (async () => {
+			return new Promise((resolve, reject) => {
+				automerge.rootHandle.doc().then(doc => {
+					resolve(structuredClone(doc.meta.tags));
+				});
+			});
+		})();
+	}
+});
+
+/**
  * Get the version hash of the current version.
  */
 Object.defineProperty(globalObject.publicObject, 'versionHash', {
@@ -61,6 +76,12 @@ async function convertTagToVersion(version) {
 	let rootDoc = await automerge.rootHandle.doc();
 	if (!rootDoc.meta.tags) return version;
 	if (!rootDoc.meta.tags[version]) return version;
+	let contentDocId = rootDoc.content;
+	let tag = rootDoc.meta.tags[version];
+	if (tag.contentDocId !== contentDocId) {
+		throw new Error("Accessing tags in archived strates is not yet supported");
+		return;
+	}
 	return rootDoc.meta.tags[version].versionHash;
 }
 
