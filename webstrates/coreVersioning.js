@@ -46,10 +46,22 @@ versioningModule.diffFromNewToOld = async (handle, version) => {
 		}
 		oldHead = allChanges.map(c => AutomergeCore.decodeChange(c))[versionIndex].hash;
 	} else if (typeof version === 'string') {
+		version = await convertTagToVersion(version);
 		oldHead = version;
 	}
-	const diffFromNewToOld = AutomergeCore.diff(currentDoc, automerge.contentHandle.heads(), [oldHead]);
-	return diffFromNewToOld;
+	try {
+		const diffFromNewToOld = AutomergeCore.diff(currentDoc, automerge.contentHandle.heads(), [oldHead]);
+		return diffFromNewToOld;
+	} catch (e) {
+		throw new Error(`${version} is not a proper version hash, number or tag.`);
+	}
+}
+
+async function convertTagToVersion(version) {
+	let rootDoc = await automerge.rootHandle.doc();
+	if (!rootDoc.meta.tags) return version;
+	if (!rootDoc.meta.tags[version]) return version;
+	return rootDoc.meta.tags[version].versionHash;
 }
 
 versioningModule.restore = async (handle, version) => {
@@ -60,6 +72,8 @@ versioningModule.restore = async (handle, version) => {
 		});
 	}
 }
+
+
 
 Object.defineProperty(globalObject.publicObject, 'tag', {
 	value: async (tag) => {
@@ -136,7 +150,8 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 
 	if (options.version) {
 		// We have to create a new source doc from the previous version
-		const diffFromNewToOld = await versioningModule.diffFromNewToOld(automerge.contentHandle, options.version);
+		const version = await convertTagToVersion(options.version);
+		const diffFromNewToOld = await versioningModule.diffFromNewToOld(automerge.contentHandle, version);
 		const currentDoc = await automerge.contentHandle.doc();
 		sourceDoc = AutomergeCore.clone(currentDoc);
 		for (const diffPatch of diffFromNewToOld) {
