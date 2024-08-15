@@ -158,6 +158,7 @@ if (match) {
 	let rootHandle;
 	document.body.innerHTML = generateLoadingPage();
 	try {
+		console.log("Looking up strate...")
 		rootHandle = await repo.find(`automerge:${documentId}`);
 	} catch (e) {
 		console.log("Failed to load strate document from Automerge");
@@ -272,6 +273,10 @@ async function setupWebstrates() {
 				coreDocument.handlePatches(patches);
 			}
 			_automerge.contentDoc = change.doc;
+		});
+
+		automerge.rootHandle.on('change', (change) => {
+			_automerge.rootDoc = change.doc;
 		});
 
 		// Ephemeral messages might be sent multiple times, so we need to deduplicate them.
