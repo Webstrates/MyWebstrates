@@ -7,7 +7,15 @@ const versioningModule = {};
  * Get the current version number of the strate.
  */
 Object.defineProperty(globalObject.publicObject, 'version', {
-	get: () => AutomergeCore.getAllChanges(automerge.contentDoc).length-1,
+	get: () => {
+		return (async () => {
+			return new Promise((resolve, reject) => {
+				automerge.contentHandle.doc().then(doc => {
+					resolve(AutomergeCore.getAllChanges(doc).length - 1);
+				});
+			});
+		})();
+	}
 });
 
 /**
@@ -18,7 +26,7 @@ Object.defineProperty(globalObject.publicObject, 'versionHash', {
 });
 
 versioningModule.currentVersionHash = () => {
-	return AutomergeCore.getHeads(automerge.contentDoc)[0];
+	return automerge.contentHandle.heads()[0];
 }
 
 /**
@@ -40,7 +48,7 @@ versioningModule.diffFromNewToOld = async (handle, version) => {
 	} else if (typeof version === 'string') {
 		oldHead = version;
 	}
-	const diffFromNewToOld = AutomergeCore.diff(currentDoc, AutomergeCore.getHeads(currentDoc), [oldHead]);
+	const diffFromNewToOld = AutomergeCore.diff(currentDoc, automerge.contentHandle.heads(), [oldHead]);
 	return diffFromNewToOld;
 }
 
@@ -123,22 +131,23 @@ Object.defineProperty(globalObject.publicObject, 'restore', {
  * @returns {Promise<*>}
  */
 versioningModule.copy = async (options = {local: false, version: undefined}) => {
-	let sourceDoc = automerge.contentDoc;
+	let sourceDoc = await automerge.contentHandle.doc();
+	let rootDoc = await automerge.rootHandle.doc();
 
 	if (options.version) {
 		// We have to create a new source doc from the previous version
 		const diffFromNewToOld = await versioningModule.diffFromNewToOld(automerge.contentHandle, options.version);
 		const currentDoc = await automerge.contentHandle.doc();
-		sourceDoc = Automerge.clone(currentDoc);
+		sourceDoc = AutomergeCore.clone(currentDoc);
 		for (const diffPatch of diffFromNewToOld) {
-			sourceDoc = Automerge.change(sourceDoc, doc => {
+			sourceDoc = AutomergeCore.change(sourceDoc, doc => {
 				patch(doc, diffPatch);
 			});
 		}
 	} else {
 		sourceDoc = await automerge.contentHandle.doc();
 	}
-	if (automerge.rootDoc.content) {
+	if (rootDoc.content) {
 		let newRootHandle = automerge.repo.create();
 		let newContentHandle = automerge.repo.create();
 		await newContentHandle.change(doc => {
@@ -149,7 +158,7 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 		});
 		await newRootHandle.change(doc => {
 			doc.content = newContentHandle.documentId;
-			let meta = JSON.parse(JSON.stringify(automerge.rootDoc.meta));
+			let meta = JSON.parse(JSON.stringify(rootDoc.meta));
 			if (options.local) {
 				meta.federations = [];
 			}
@@ -196,14 +205,15 @@ Object.defineProperty(globalObject.publicObject, 'copy', {
  * @returns {Promise<*>}
  */
 versioningModule.clone = async () => {
+	const rootDoc = await automerge.rootHandle.doc()
 	let clonedContentHandle = automerge.repo.clone(automerge.contentHandle);
-	if (!automerge.rootDoc.content) {
+	if (!rootDoc.content) {
 		return clonedContentHandle;
 	}
 	let rootHandle = automerge.repo.create();
 	await rootHandle.change(doc => {
 		doc.content = clonedContentHandle.documentId;
-		doc.meta = JSON.parse(JSON.stringify(automerge.rootDoc.meta));
+		doc.meta = JSON.parse(JSON.stringify(rootDoc.meta));
 	});
 	return rootHandle;
 }
@@ -229,9 +239,10 @@ Object.defineProperty(globalObject.publicObject, 'clone', {
  */
 Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
+		const rootDoc = await automerge.rootHandle.doc();
 		let otherStrateHandle = automerge.repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
-		if (automerge.rootDoc.content) {
+		if (rootDoc.content) {
 			let otherStrateContentDocId = otherStrateDoc.content;
 			let otherStrateContentHandle = automerge.repo.find(`automerge:${otherStrateContentDocId}`);
 			automerge.contentHandle.merge(otherStrateContentHandle);
