@@ -8,13 +8,7 @@ const versioningModule = {};
  */
 Object.defineProperty(globalObject.publicObject, 'version', {
 	get: () => {
-		return (async () => {
-			return new Promise((resolve, reject) => {
-				automerge.contentHandle.doc().then(doc => {
-					resolve(AutomergeCore.getAllChanges(doc).length - 1);
-				});
-			});
-		})();
+		return AutomergeCore.getAllChanges(automerge.contentDoc).length - 1;
 	}
 });
 
@@ -23,13 +17,7 @@ Object.defineProperty(globalObject.publicObject, 'version', {
  */
 Object.defineProperty(globalObject.publicObject, 'tags', {
 	get: () => {
-		return (async () => {
-			return new Promise((resolve, reject) => {
-				automerge.rootHandle.doc().then(doc => {
-					resolve(structuredClone(doc.meta.tags));
-				});
-			});
-		})();
+		return structuredClone(automerge.rootDoc.meta.tags);
 	}
 });
 
