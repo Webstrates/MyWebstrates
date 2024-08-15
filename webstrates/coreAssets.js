@@ -48,23 +48,32 @@ function getAssets() {
  * @returns {Promise<void>}
  */
 globalObject.publicObject.addAssetFromFile = async (file) => {
-	let reader = new FileReader();
-	reader.onload = async function (e) {
-		let arrayBuffer = e.target.result;
-		let assetHandle = (await automerge.repo).create()
-		await assetHandle.change(d => {
-			d.data = new Uint8Array(arrayBuffer);
-			d.mimeType = file.type;
-			d.fileName = file.name;
-			d.v = 0;
-		});
-		automerge.contentHandle.change(d => {
-			d.assets.push({fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId});
-		});
-		window.assetHandles.push(assetHandle);
-		let doc = await assetHandle.doc();
-	}
-	reader.readAsArrayBuffer(file);
+	return new Promise((accept, reject) => {
+		let reader = new FileReader();
+		reader.onload = async function (e) {
+			let arrayBuffer = e.target.result;
+			let assetHandle = (await automerge.repo).create()
+			await assetHandle.change(d => {
+				d.data = new Uint8Array(arrayBuffer);
+				d.mimeType = file.type;
+				d.fileName = file.name;
+				d.v = 0;
+			});
+			let assetObject = {fileName: file.name, fileSize: file.size, mimeType: file.type, id: assetHandle.documentId};
+			automerge.contentHandle.change(d => {
+				for (const asset of d.assets) {
+					if (asset.fileName === file.name) {
+						d.assets.splice(d.assets.indexOf(asset), 1);
+					}
+				}
+				d.assets.push(assetObject);
+			});
+			window.assetHandles.push(assetHandle);
+			let doc = await assetHandle.doc();
+			accept(assetObject);
+		}
+		reader.readAsArrayBuffer(file);
+	});
 }
 
 /**
@@ -87,9 +96,11 @@ globalObject.publicObject.uploadAsset = (callback = () => {}, options = {}) => {
 				formData.append('file[]', input.files.item(i));
 			}
 			let files = formData.getAll("file[]");
+			let newAssets = [];
 			for (let file of files) {
-				await globalObject.publicObject.addAssetFromFile(file);
+				newAssets.push(await globalObject.publicObject.addAssetFromFile(file));
 			}
+			accept(newAssets);
 		});
 
 		input.click();

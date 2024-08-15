@@ -13,7 +13,7 @@ try {
 const Repo = AutomergeRepo.Repo;
 const Automerge = AutomergeRepo.Automerge.next;
 
-const CACHE_NAME = "v212";
+const CACHE_NAME = "v219";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
