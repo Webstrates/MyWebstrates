@@ -8,7 +8,7 @@ const versioningModule = {};
  */
 Object.defineProperty(globalObject.publicObject, 'version', {
 	get: () => {
-		return AutomergeCore.getAllChanges(automerge.contentDoc).length - 1;
+		return automerge.contentHandle.history().length-1;
 	}
 });
 
@@ -39,22 +39,23 @@ versioningModule.currentVersionHash = () => {
  * @returns {Promise<Patch[]>}
  */
 versioningModule.diffFromNewToOld = async (handle, version) => {
-	let currentDoc = await handle.doc();
-	let allChanges = AutomergeCore.getAllChanges(currentDoc);
-	let oldHead;
+	let allChanges = handle.history();
+	let oldHeads;
 	if (typeof version === 'number') {
 		const versionIndex = version;
 		if (version >= allChanges.length || version < 1) {
 			throw new Error("Invalid version number");
 		}
-		oldHead = allChanges.map(c => AutomergeCore.decodeChange(c))[versionIndex].hash;
+		oldHeads = allChanges[versionIndex];
+		if (oldHeads.length > 1) {
+			throw new Error("Old version has multiple heads and represents a conflict. Cannot create a diff.");
+		}
 	} else if (typeof version === 'string') {
 		version = await convertTagToVersion(version);
-		oldHead = version;
+		oldHeads = [version];
 	}
 	try {
-		const diffFromNewToOld = AutomergeCore.diff(currentDoc, automerge.contentHandle.heads(), [oldHead]);
-		return diffFromNewToOld;
+		return automerge.contentHandle.diff(oldHeads);
 	} catch (e) {
 		throw new Error(`${version} is not a proper version hash, number or tag.`);
 	}
@@ -119,8 +120,8 @@ async function archiveHistory() {
 			doc[key] = structuredClone(currentContentDoc[key]);
 		}
 	});
-	let rootDocHeads = AutomergeCore.getHeads(await automerge.rootHandle.doc());
-	let contentDocHeads = AutomergeCore.getHeads(await newContentHandle.doc());
+	let rootDocHeads = automerge.rootHandle.heads();
+	let contentDocHeads = newContentHandle.heads();
 	await automerge.rootHandle.change(doc => {
 		if (!doc.meta.archive) doc.meta.archive = [];
 		doc.meta.archive.push({
