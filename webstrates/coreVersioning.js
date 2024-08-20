@@ -51,7 +51,7 @@ versioningModule.diffFromNewToOld = async (handle, version) => {
 			throw new Error("Old version has multiple heads and represents a conflict. Cannot create a diff.");
 		}
 	} else if (typeof version === 'string') {
-		version = await convertTagToVersion(version);
+		version = await convertTagOrNumberToVersionHash(version);
 		oldHeads = [version];
 	}
 	try {
@@ -61,7 +61,18 @@ versioningModule.diffFromNewToOld = async (handle, version) => {
 	}
 }
 
-async function convertTagToVersion(version) {
+async function convertTagOrNumberToVersionHash(version) {
+	if (typeof version === 'number') {
+		const allChanges = automerge.contentHandle.history();
+		if (version >= allChanges.length || version < 1) {
+			throw new Error("Invalid version number");
+		}
+		let heads = allChanges[version];
+		if (heads.length > 1) {
+			throw new Error("Old version has multiple heads and represents a conflict.");
+		}
+		return heads[0];
+	}
 	let rootDoc = await automerge.rootHandle.doc();
 	if (!rootDoc.meta.tags) return version;
 	if (!rootDoc.meta.tags[version]) return version;
@@ -159,28 +170,14 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 	let rootDoc = await automerge.rootHandle.doc();
 
 	if (options.version) {
-		// We have to create a new source doc from the previous version
-		const version = await convertTagToVersion(options.version);
-		const diffFromNewToOld = await versioningModule.diffFromNewToOld(automerge.contentHandle, version);
-		const currentDoc = await automerge.contentHandle.doc();
-		sourceDoc = AutomergeCore.clone(currentDoc);
-		for (const diffPatch of diffFromNewToOld) {
-			sourceDoc = AutomergeCore.change(sourceDoc, doc => {
-				patch(doc, diffPatch);
-			});
-		}
+		const version = await convertTagOrNumberToVersionHash(options.version);
+		sourceDoc = automerge.contentHandle.view([version]);
 	} else {
 		sourceDoc = await automerge.contentHandle.doc();
 	}
 	if (rootDoc.content) {
 		let newRootHandle = automerge.repo.create();
-		let newContentHandle = automerge.repo.create();
-		await newContentHandle.change(doc => {
-			// Copy over all properties from the source doc
-			for (const key in sourceDoc) {
-				doc[key] = structuredClone(sourceDoc[key]);
-			}
-		});
+		let newContentHandle = automerge.repo.create(structuredClone(sourceDoc));
 		await newRootHandle.change(doc => {
 			doc.content = newContentHandle.documentId;
 			let meta = JSON.parse(JSON.stringify(rootDoc.meta));
