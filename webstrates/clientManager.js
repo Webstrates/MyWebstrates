@@ -11,6 +11,7 @@ globalObject.createEvent('clientJoin');
 globalObject.createEvent('clientJoin*');
 globalObject.createEvent('clientPart');
 globalObject.createEvent('clientPart*');
+globalObject.createEvent('reconnect'); //This event is never triggered. It is here to allow users to listen for it.
 
 let clientId;
 let clients = [];
