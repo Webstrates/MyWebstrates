@@ -36,11 +36,11 @@ import {clientManager} from "./webstrates/clientManager";
 import {userObject} from "./webstrates/userObject";
 import {data} from "./webstrates/data";
 import {peerHandler} from "./webstrates/peerHandler";
-import {signalStream} from "./webstrates/signalStream";
 import {coreVersioning} from "./webstrates/coreVersioning";
 import {cache} from "./webstrates/cache"
 import {importMap} from "./webstrates/importMap"
 import {importExport} from "./webstrates/importExport"
+import {signalStream} from "./webstrates/signalStream";
 
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
 

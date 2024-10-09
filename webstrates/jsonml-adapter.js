@@ -1,5 +1,7 @@
 'use strict';
 
+import {coreUtils} from "./coreUtils";
+
 // Map from elements to their parents.
 const parentMap = new Map();
 
@@ -14,6 +16,7 @@ adapter.createDocumentFragment = () => [];
 adapter.createElement = (tagName, namespaceURI, attrArray) => {
 	const attrs = {};
 	attrArray.forEach(({ name, value }) => attrs[name] = value.replace(/"/g, '&quot;'));
+	if (!attrs.__wid) attrs['__wid'] = coreUtils.randomString();
 	const node = [ tagName, attrs ];
 	namespaceMap.set(node, namespaceURI);
 	return node;

@@ -6,6 +6,7 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 import { ZipReader, BlobReader, BlobWriter, TextWriter } from "@zip.js/zip.js";
 import mime from 'mime';
 import * as parse5 from "parse5";
+import {coreUtils} from "./webstrates/coreUtils";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 try {
@@ -13,7 +14,7 @@ try {
 const Repo = AutomergeRepo.Repo;
 const Automerge = AutomergeRepo.Automerge.next;
 
-const CACHE_NAME = "v242";
+const CACHE_NAME = "v254";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
 	"es-module-shims.js",
@@ -480,41 +481,12 @@ async function createDataDoc(request) {
 }
 
 function generateDOM(name) {
-	return ['html', {'__wid': randomString()}, '\n',
-		[ 'head', {'__wid': randomString()}, '\n',
-			[ 'title', {'__wid': randomString()}, name ], '\n'], '\n',
-		[ 'body', {'__wid': randomString()}, '\n' ]
+	return ['html', {'__wid': coreUtils.randomString()}, '\n',
+		[ 'head', {'__wid': coreUtils.randomString()}, '\n',
+			[ 'title', {'__wid': coreUtils.randomString()}, name ], '\n'], '\n',
+		[ 'body', {'__wid': coreUtils.randomString()}, '\n' ]
 	];
 }
-
-/**
- * Get random string of size.
- * @param  {int}    size     Expected length of string (optional).
- * @param  {string} alphabet List of characters to be used in string (optional).
- * @return {string}          Generated string.
- * @public
- */
- function randomString(size = 8,
-																			 // Does not include 0, O, o, 1, I, l for readability.
-																			 alphabet = '23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ') {
-	const len = alphabet.length;
-	let str = '';
-	while (size--) {
-		str += alphabet[random(0, len)];
-	}
-	return str;
-};
-
-/**
- * Get random integer from interval [min, max). Unbiased and evenly distributed (or close to).
- * @param  {int} min Minimum number, inclusive.
- * @param  {int} max Maximum number, exclusive.
- * @return {int}     Random number in interval [min, max)
- * @public
- */
-function random(min, max) {
-	return Math.floor(min + Math.random() * (max - min));
-};
 
 
 const openDatabase = () => {
