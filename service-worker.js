@@ -10,13 +10,13 @@ import {coreUtils} from "./webstrates/coreUtils";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
 import { md5 } from 'js-md5';
 try {
-
 const Repo = AutomergeRepo.Repo;
 const Automerge = AutomergeRepo.Automerge.next;
 
-const CACHE_NAME = "v254";
+const CACHE_NAME = "v654";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
+	"automerge_wasm_bg2.wasm",
 	"es-module-shims.js",
 	"es-module-shims.js.map",
 	"index.html",
@@ -116,6 +116,13 @@ self.addEventListener("activate", async (event) => {
 })
 
 self.addEventListener("fetch", (event) => {
+	// Handle / -> index.html
+	if (event.request.url.replace(self.location.origin, '') === '/') {
+		event.respondWith((async () => {
+			return await caches.match('/index.html');;
+		})())
+		return;
+	}
 	// First we will check if it is a remote URL that is being fetched.
 	if (self.location.origin !== (new URL(event.request.url)).origin) {
 		let fetchPromise = handleRemoteFetch(event);
@@ -225,7 +232,6 @@ async function handleNewMatch(event, newMatch) {
 	let jsonML;
 	let assets = [];
 	if (newMatch) {
-		console.log("NEW MATCH")
 		let prototypeZipURL = newMatch[4];
 		if (prototypeZipURL) {
 			// read the zip file from the prototypeZipURL and extract the content of index.html in it if it exists
