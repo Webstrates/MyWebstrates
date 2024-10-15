@@ -6,8 +6,10 @@ MyWebstrates is a reimplementation of [Webstrates](https://webstrates.net) desig
 
 MyWebstrates is a collaboration between [Aarhus University](https://au.dk), [Télécom Paris](https://www.telecom-paris.fr/en/home), [Institut Polytechnique de Paris](https://www.ip-paris.fr), and [Ink & Switch](https://inkandswitch.com).
 
-# Paper & Video
+# Paper, Poster & Video
 [Research paper (pdf)](https://cs.au.dk/~clemens/files/MyWebstrates-UIST2024.pdf)
+
+[Explanatory poster (pdf)](https://cs.au.dk/~clemens/files/Poster.pdf)
 
 [![Watch the accompanying video on YouTube](https://img.youtube.com/vi/uHVsZs4HfAw/0.jpg)](https://www.youtube.com/watch?v=uHVsZs4HfAw)
 
