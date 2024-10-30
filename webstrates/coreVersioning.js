@@ -181,6 +181,7 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 		await newRootHandle.change(doc => {
 			doc.content = newContentHandle.documentId;
 			let meta = JSON.parse(JSON.stringify(rootDoc.meta));
+			meta.tags = {}; // Remove old tagged versions
 			if (options.local) {
 				meta.federations = [];
 			}
@@ -197,6 +198,7 @@ versioningModule.copy = async (options = {local: false, version: undefined}) => 
 			if (options.local) {
 				doc.meta.federations = [];
 			}
+			doc.meta.tags = {};
 		});
 		return newContentHandle;
 	}
