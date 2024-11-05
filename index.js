@@ -199,7 +199,10 @@ if (match) {
 		window.location = window.location.pathname + window.location.search.slice(1);
 	}, 500);
 } else {
-	document.querySelector("#content").innerHTML = `<strong>Client is installed</strong><br><br><a href="/new">Create a new blank webstrate.</a><br><a href="/new?prototypeUrl=https://cdn.jsdelivr.net/gh/Webstrates/Codestrates-v2@master/prototypes/web.zip">Create a new codestrate.</a>`;
+	document.querySelector("#content").innerHTML = `<strong>Client is installed</strong><br><br>\
+		<a href="/new">Create a new blank webstrate.</a><br>\
+		<a href="/new?editable">Create a new blank <em>editable</em> webstrate.</a><br>\
+		<a href="/new?prototypeUrl=https://cdn.jsdelivr.net/gh/Webstrates/Codestrates-v2@master/prototypes/web.zip">Create a new codestrate.</a><br>`;
 }
 
 function setupSyncServers() {

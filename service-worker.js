@@ -218,7 +218,7 @@ async function handleLocalFetch(event) {
 	if (responseFromCache) return responseFromCache;
 	let p2pMatch = event.request.url.match(/\/p2p/);
 	if (p2pMatch) return await handleP2PMatch();
-	let newMatch = event.request.url.match(/(\/new)((\?prototypeUrl=)(.+))?/);
+	let newMatch = event.request.url.match(/(\/new)(:?\?(?<option>[a-zA-Z0-9_-]+)(?:)(?:=(?<value>.+)?)?)?/);
 	if (newMatch) return await handleNewMatch(event, newMatch);
 	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
 	if (assetMatch && !(assetMatch[2] && assetMatch[2].startsWith('?'))) return await handleAssetMatch(event, assetMatch);
@@ -237,8 +237,8 @@ async function handleNewMatch(event, newMatch) {
 	let jsonML;
 	let assets = [];
 	if (newMatch) {
-		let prototypeZipURL = newMatch[4];
-		if (prototypeZipURL) {
+		let prototypeZipURL = newMatch?.groups?.value;
+		if (newMatch?.groups?.option === 'prototypeURL' && prototypeZipURL) {
 			// read the zip file from the prototypeZipURL and extract the content of index.html in it if it exists
 			let prototypeZip = await fetch(prototypeZipURL, {credentials: 'same-origin'});
 			let prototypeZipBlob = await prototypeZip.blob();
@@ -272,10 +272,11 @@ async function handleNewMatch(event, newMatch) {
 		}
 		let rootHandle = (await repo).create()
 		let contentHandle = (await repo).create()
+		let contentEditable =  newMatch?.groups?.option === 'editable' && newMatch?.groups?.value !== 'false';
 		await contentHandle.change(d => {
 			d.assets = assets;
 			d.data = {};
-			d.dom = jsonML ? jsonML : generateDOM("New webstrate")
+			d.dom = jsonML ? jsonML : generateDOM("New webstrate", contentEditable)
 		});
 		await rootHandle.change(d => {
 			d.meta = {federations: []};
@@ -501,11 +502,12 @@ async function createDataDoc(request) {
 	return handle;
 }
 
-function generateDOM(name) {
+function generateDOM(name, contentEditable=false) {
+	const editable = contentEditable ? 'true' : 'false';
 	return ['html', {'__wid': coreUtils.randomString()}, '\n',
 		[ 'head', {'__wid': coreUtils.randomString()}, '\n',
 			[ 'title', {'__wid': coreUtils.randomString()}, name ], '\n'], '\n',
-		[ 'body', {'__wid': coreUtils.randomString()}, '\n' ]
+		[ 'body', {'__wid': coreUtils.randomString(), 'contentEditable': editable}, '\n' ]
 	];
 }
 
