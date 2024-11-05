@@ -238,7 +238,7 @@ async function handleNewMatch(event, newMatch) {
 	let assets = [];
 	if (newMatch) {
 		let prototypeZipURL = newMatch?.groups?.value;
-		if (newMatch?.groups?.option === 'prototypeURL' && prototypeZipURL) {
+		if (newMatch?.groups?.option?.toLowerCase() === 'prototypeurl' && prototypeZipURL) {
 			// read the zip file from the prototypeZipURL and extract the content of index.html in it if it exists
 			let prototypeZip = await fetch(prototypeZipURL, {credentials: 'same-origin'});
 			let prototypeZipBlob = await prototypeZip.blob();
