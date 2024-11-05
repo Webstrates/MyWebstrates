@@ -8,6 +8,7 @@ import mime from 'mime';
 import * as parse5 from "parse5";
 import {coreUtils} from "./webstrates/coreUtils";
 import {jsonmlAdapter} from "./webstrates/jsonml-adapter";
+import jsonmlTools from "jsonml-tools";
 import { md5 } from 'js-md5';
 try {
 const Repo = AutomergeRepo.Repo;
@@ -33,6 +34,10 @@ const FILES_TO_CACHE = [
 ];
 
 const stratesWithCache = new Map();
+
+const SELF_CLOSING_TAGS = ['area', 'base', 'br', 'col', 'embed', 
+	'hr', 'img', 'input', 'keygen', 'link', 'menuitem', 
+	'meta', 'param', 'source', 'track', 'wbr'];
 
 async function initializeRepo() {
 	console.log("Initializing repo in service worker");
@@ -218,7 +223,7 @@ async function handleLocalFetch(event) {
 	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
 	if (assetMatch && !(assetMatch[2] && assetMatch[2].startsWith('?'))) return await handleAssetMatch(event, assetMatch);
 	let urlPart = "/s/" + event.request.url.split("/s/")[1];
-	let match = urlPart.match(/^\/s\/([a-zA-Z0-9._-]+)(?:@([a-zA-Z0-9.-:]+))?\/?(?:([a-zA-Z0-9_-]+)\/)?/);
+	let match = urlPart.match(/^\/s\/(?<id>[a-zA-Z0-9._-]+)(?:@(?<remote>[a-zA-Z0-9.-:]+))?\/?(?:\?(?<query>[a-zA-Z0-9_-]+))?/);
 	if (match) return await handleStrateMatch(event, match);
 }
 
@@ -421,6 +426,16 @@ async function handleStrateMatch(event, match) {
 	if (caching) {
 		stratesWithCache.set(event.resultingClientId, rootDocHandle.documentId);
 	}
+
+	if (match.groups.query === 'raw') {
+		let contentDocId = rootDoc?.content;
+		let contentDocHandle = (await repo).find(`automerge:${contentDocId}`);
+		let contentDoc = await contentDocHandle.doc();
+		let rawDOM = contentDoc?.dom;
+		let dom = jsonmlTools.toXML(rawDOM, SELF_CLOSING_TAGS);
+		return new Response(`<!DOCTYPE html>\n${dom}`, {status: 200, statusText: 'OK', headers: {'Content-Type': 'text/html'}});
+	}
+
 	return new Response(`<!DOCTYPE html>
 	<html>
 	<head>
