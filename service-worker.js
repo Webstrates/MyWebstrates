@@ -69,7 +69,7 @@ const addResourcesToCache = async (resources) => {
 
 
 self.addEventListener("install", (event) => {
-	console.log("Installing service working")
+	console.log("Installing service worker")
 	event.waitUntil(
 		addResourcesToCache(FILES_TO_CACHE),
 	);
