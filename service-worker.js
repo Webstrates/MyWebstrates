@@ -503,11 +503,11 @@ async function createDataDoc(request) {
 }
 
 function generateDOM(name, contentEditable=false) {
-	const editable = contentEditable ? 'true' : 'false';
+	const editable = contentEditable ? {'contentEditable': 'true'} : {}
 	return ['html', {'__wid': coreUtils.randomString()}, '\n',
 		[ 'head', {'__wid': coreUtils.randomString()}, '\n',
 			[ 'title', {'__wid': coreUtils.randomString()}, name ], '\n'], '\n',
-		[ 'body', {'__wid': coreUtils.randomString(), 'contentEditable': editable}, '\n' ]
+		[ 'body', {'__wid': coreUtils.randomString(), ...editable}, '\n' ]
 	];
 }
 
