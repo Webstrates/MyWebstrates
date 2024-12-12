@@ -13,16 +13,16 @@
 		"jspm": "^3.0.1",
 		"prettier": "^2.8.8",
 		"serve": "^14.2.0",
-		"vite": "^4.4.9",
+		"vite": "^4",
 		"vitest": "^1.1.1"
 	},
 	"dependencies": {
-		"@automerge/automerge": "^2.2.2",
-		"@automerge/automerge-repo": "^2.0.0-alpha.11",
-		"@automerge/automerge-repo-network-broadcastchannel": "^2.0.0-alpha.11",
-		"@automerge/automerge-repo-network-messagechannel": "^2.0.0-alpha.11",
-		"@automerge/automerge-repo-network-websocket": "^2.0.0-alpha.11",
-		"@automerge/automerge-repo-storage-indexeddb": "^2.0.0-alpha.11",
+		"@automerge/automerge": "2.2.9-alpha.4",
+		"@automerge/automerge-repo": "2.0.0-alpha.14",
+		"@automerge/automerge-repo-network-broadcastchannel": "2.0.0-alpha.14",
+		"@automerge/automerge-repo-network-messagechannel": "2.0.0-alpha.14",
+		"@automerge/automerge-repo-network-websocket": "2.0.0-alpha.14",
+		"@automerge/automerge-repo-storage-indexeddb": "2.0.0-alpha.14",
 		"@onsetsoftware/automerge-patcher": "^0.14.0",
 		"@zip.js/zip.js": "^2.7.35",
 		"concurrently": "^8.2.2",
@@ -36,5 +36,9 @@
 		"setimmediate": "^1.0.5",
 		"verbal-expressions": "^1.0.2",
 		"vite-plugin-replace": "^0.1.1"
+	},
+	"overrides": {
+	    "@automerge/automerge": "$@automerge/automerge",
+	    "vite": "$vite"
 	}
 }

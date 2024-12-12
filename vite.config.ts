@@ -32,6 +32,10 @@ export default defineConfig({
           from: "from \"@automerge/automerge\";",
           to: "from \"@automerge/automerge/slim\";",
         },
+        { /** Fix for @onsetsoftware/automerge-patcher (or anyone really) importing the fullfat automerge stack when it shouldn't **/
+          from: "from \"@automerge/automerge-repo\";",
+          to: "from \"@automerge/automerge-repo/slim\";",
+        },
       ],
     }),
     ],

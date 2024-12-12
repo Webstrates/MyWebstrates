@@ -17,7 +17,6 @@ const Automerge = AutomergeRepo.Automerge.next;
 const CACHE_NAME = "v654";
 const FILES_TO_CACHE = [
 	"automerge_wasm_bg.wasm",
-	"automerge_wasm_bg2.wasm",
 	"es-module-shims.js",
 	"es-module-shims.js.map",
 	"index.html",
