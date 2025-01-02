@@ -374,7 +374,7 @@ async function handleAssetMatch(event, assetMatch) {
 					status: 200,
 					statusText: 'OK',
 					headers: {
-						'Content-Type': assetDoc.mimeType
+						'Content-Type': mime.getType(entry.filename)
 					}
 				})
 			} else {
