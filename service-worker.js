@@ -213,10 +213,13 @@ function handleRemoteFetch(event) {
 }
 
 async function handleLocalFetch(event) {
+	const url = new URL(event.request.url);
 	const responseFromCache = await caches.match(event.request);
 	if (responseFromCache) return responseFromCache;
 	let p2pMatch = event.request.url.match(/\/p2p/);
 	if (p2pMatch) return await handleP2PMatch();
+	let assetsMatch = url.searchParams.has("assets");
+	if (assetsMatch) return await handleAssetsMatch(event, url);
 	let newMatch = event.request.url.match(/(\/new)(:?\?(?<option>[a-zA-Z0-9_-]+)(?:)(?:=(?<value>.+)?)?)?/);
 	if (newMatch) return await handleNewMatch(event, newMatch);
 	let assetMatch = event.request.url.match("/s/([^\\/]+)/(.+)");
@@ -224,6 +227,19 @@ async function handleLocalFetch(event) {
 	let urlPart = "/s/" + event.request.url.split("/s/")[1];
 	let match = urlPart.match(/^\/s\/(?<id>[a-zA-Z0-9._-]+)(?:@(?<remote>[a-zA-Z0-9.-:]+))?\/?(?:\?(?<query>[a-zA-Z0-9_-]+))?/);
 	if (match) return await handleStrateMatch(event, match);
+}
+
+async function handleAssetsMatch(event, url) {
+	const docId = docIdFromUrl(url.href);
+	const contentDocHandle = await getContentDocHandle(docId);
+	const contentDoc = await contentDocHandle.doc();
+	return new Response(JSON.stringify(contentDoc.assets),{
+		status: 200,
+		statusText: 'OK',
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	})
 }
 
 async function handleP2PMatch() {
@@ -404,7 +420,7 @@ async function handleStrateMatch(event, match) {
 	let documentId = match[1].split("-").pop(); // Ignore anything before the last dash
 	let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 	if (syncServer) await addSyncServer(`wss://${syncServer}`);
-	let rootDocHandle = (await repo).find(`automerge:${documentId}`);
+	let rootDocHandle = await (await repo).find(`automerge:${documentId}`);
 	let rootDoc = await rootDocHandle.doc();
 	// To make it possible to import automerge and automerge-repo we need to add them to the importMap
 	// If a user imports them, we want to make sure they get the same instance as running in the client
@@ -567,4 +583,15 @@ const getDocId = async (key) => {
 } catch (ex){
     console.log("SW error", ex);
 
+}
+
+const getContentDocHandle = async (rootDocId) => {
+	const rootDocHandle = await (await repo).find(`automerge:${rootDocId}`);
+	let doc = await rootDocHandle.doc();
+	const contentDocHandle = await (await repo).find(`automerge:${doc.content}`);
+	return contentDocHandle;
+}
+
+const docIdFromUrl = (url) => {
+	return url.match("/s/([^\\/]+)/(.+)")[1].split("@")[0].split("-").pop();
 }
