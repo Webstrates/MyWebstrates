@@ -1,4 +1,4 @@
-import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64";
 import * as AutomergeRepo from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
@@ -12,11 +12,12 @@ import jsonmlTools from "jsonml-tools";
 import { md5 } from 'js-md5';
 try {
 const Repo = AutomergeRepo.Repo;
-const Automerge = AutomergeRepo.Automerge.next;
+const Automerge = AutomergeRepo.Automerge;
 
 const CACHE_NAME = "v654";
 const FILES_TO_CACHE = [
-	"automerge_wasm_bg.wasm",
+	"_commonjsHelpers.js",
+	"_commonjsHelpers.js.map",
 	"es-module-shims.js",
 	"es-module-shims.js.map",
 	"index.html",
@@ -29,7 +30,8 @@ const FILES_TO_CACHE = [
 	"favicon.ico",
 	"local-first.png",
 	"mywebstrates.png",
-	"p2p/P2PSetup.html"
+	"p2p/P2PSetup.html",
+	"vite.svg"
 ];
 
 const stratesWithCache = new Map();
@@ -344,10 +346,10 @@ async function handleAssetMatch(event, assetMatch) {
 	const asset = await getAsset();
 	let assetId;
 	if (!asset) {
-		let handle = (await repo).find(`automerge:${docId}`);
+		let handle = await (await repo).find(`automerge:${docId}`);
 		let doc = await handle.doc();
 		if (doc.content) {
-			handle = (await repo).find(`automerge:${doc.content}`);
+			handle = await (await repo).find(`automerge:${doc.content}`);
 			doc = await handle.doc();
 		}
 		for (let asset of doc.assets) {
@@ -359,7 +361,7 @@ async function handleAssetMatch(event, assetMatch) {
 		assetId = asset.id;
 	}
 	if (assetId) {
-		let assetHandle = (await repo).find(`automerge:${assetId}`);
+		let assetHandle = await (await repo).find(`automerge:${assetId}`);
 		let assetDoc = await assetHandle.doc();
 		const uint8Array = assetDoc.data;
 		if (isZip && isZipDir) {
@@ -420,8 +422,8 @@ async function handleStrateMatch(event, match) {
 	let documentId = match[1].split("-").pop(); // Ignore anything before the last dash
 	let syncServer = match[2] ? match[2].split('/')[0] : undefined;
 	if (syncServer) await addSyncServer(`wss://${syncServer}`);
-	let rootDocHandle = await (await repo).find(`automerge:${documentId}`);
-	let rootDoc = await rootDocHandle.doc();
+	let rootDocHandle = await (await repo).find(`automerge:${documentId}`, { allowableStates: ["ready", "unavailable"] });
+	let rootDoc = rootDocHandle.isReady() ? await rootDocHandle.doc() : undefined;
 	// To make it possible to import automerge and automerge-repo we need to add them to the importMap
 	// If a user imports them, we want to make sure they get the same instance as running in the client
 	let automergeRepoExports = '';
@@ -445,7 +447,7 @@ async function handleStrateMatch(event, match) {
 
 	if (match.groups.query === 'raw') {
 		let contentDocId = rootDoc?.content;
-		let contentDocHandle = (await repo).find(`automerge:${contentDocId}`);
+		let contentDocHandle = await (await repo).find(`automerge:${contentDocId}`);
 		let contentDoc = await contentDocHandle.doc();
 		let rawDOM = contentDoc?.dom;
 		let dom = jsonmlTools.toXML(rawDOM, SELF_CLOSING_TAGS);

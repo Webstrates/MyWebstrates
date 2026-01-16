@@ -1,4 +1,4 @@
-import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64.js";
+import { automergeWasmBase64 } from "@automerge/automerge/automerge.wasm.base64";
 import * as Automerge from "@automerge/automerge-repo/slim"
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb"
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket"
@@ -6,7 +6,7 @@ import { MessageChannelNetworkAdapter } from "@automerge/automerge-repo-network-
 await import("es-module-shims")
 
 window.Automerge = Automerge;
-window.AutomergeCore = Automerge.Automerge.next;
+window.AutomergeCore = Automerge.Automerge;
 
 const Repo = Automerge.Repo;
 const documentProxyObj = {};
@@ -220,7 +220,7 @@ async function setupAssetHandles() {
 	let contentDoc = automerge.contentDoc;
 	if (!contentDoc.assets) return;
 	for (let asset of contentDoc.assets) {
-		let assetHandle = (await repo).find(`automerge:${asset.id}`);
+		let assetHandle = await (await repo).find(`automerge:${asset.id}`);
 		window.assetHandles.push(assetHandle);
 	}
 }
@@ -229,7 +229,7 @@ async function setupCacheHandles() {
 	let contentDoc = automerge.contentDoc;
 	if (!contentDoc.cache) return;
 	for (let cached in contentDoc.cache) {
-		let cachedHandle = (await repo).find(`automerge:${contentDoc.cache[cached]}`);
+		let cachedHandle = await (await repo).find(`automerge:${contentDoc.cache[cached]}`);
 		window.cacheHandles.push(cachedHandle);
 	}
 }

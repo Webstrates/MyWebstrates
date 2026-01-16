@@ -1,4 +1,3 @@
-import { patch } from "@onsetsoftware/automerge-patcher";
 import { globalObject } from './globalObject.js';
 
 const versioningModule = {};
@@ -87,11 +86,9 @@ async function convertTagOrNumberToVersionHash(version) {
 
 versioningModule.restore = async (handle, version) => {
 	const diffFromNewToOld = await versioningModule.diffFromNewToOld(handle, version);
-	for (const diffPatch of diffFromNewToOld) {
-		handle.change((doc) => {
-			patch(doc, diffPatch);
-		});
-	}
+	handle.change((doc) => {
+		AutomergeCore.applyPatches(doc, diffFromNewToOld);
+	});
 }
 
 
@@ -264,11 +261,11 @@ Object.defineProperty(globalObject.publicObject, 'clone', {
 Object.defineProperty(globalObject.publicObject, 'merge', {
 	value: async (otherStrateId) => {
 		const rootDoc = await automerge.rootHandle.doc();
-		let otherStrateHandle = automerge.repo.find(`automerge:${otherStrateId}`);
+		let otherStrateHandle = await automerge.repo.find(`automerge:${otherStrateId}`);
 		let otherStrateDoc = await otherStrateHandle.doc();
 		if (rootDoc.content) {
 			let otherStrateContentDocId = otherStrateDoc.content;
-			let otherStrateContentHandle = automerge.repo.find(`automerge:${otherStrateContentDocId}`);
+			let otherStrateContentHandle = await automerge.repo.find(`automerge:${otherStrateContentDocId}`);
 			automerge.contentHandle.merge(otherStrateContentHandle);
 		} else {
 			automerge.rootHandle.merge(otherStrateHandle);

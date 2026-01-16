@@ -28,11 +28,11 @@ export default defineConfig({
     plugins: [
     replaceCodePlugin({
       replacements: [
-        { /** Fix for @onsetsoftware/automerge-patcher (or anyone really) importing the fullfat automerge stack when it shouldn't **/
+        { /** Ensure dependencies use slim automerge imports to avoid loading WASM twice **/
           from: "from \"@automerge/automerge\";",
           to: "from \"@automerge/automerge/slim\";",
         },
-        { /** Fix for @onsetsoftware/automerge-patcher (or anyone really) importing the fullfat automerge stack when it shouldn't **/
+        { /** Ensure dependencies use slim automerge-repo imports **/
           from: "from \"@automerge/automerge-repo\";",
           to: "from \"@automerge/automerge-repo/slim\";",
         },
