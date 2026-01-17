@@ -137,3 +137,6 @@ dist
 
 # macOS files
 .DS_Store
+
+package-lock.json
+AGENTS.md
