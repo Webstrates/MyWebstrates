@@ -41,6 +41,7 @@ import {cache} from "./webstrates/cache"
 import {importMap} from "./webstrates/importMap"
 import {importExport} from "./webstrates/importExport"
 import {signalStream} from "./webstrates/signalStream";
+import {cookies} from "./webstrates/cookies";
 
 coreDOM.setDocuments(documentProxy, document, documentProxyObj);
 
